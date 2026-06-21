@@ -35,8 +35,9 @@ def test_load_agents_present_on_sample_app() -> None:
     assert agents.path is not None
     assert agents.path.name == "AGENTS.md"
     assert "Sample App" in agents.content
-    block = agents.to_context_block()
-    assert "## AGENTS.md" in block
+    block = agents.to_context_block(repo=FIXTURE_REPO)
+    assert "## AGENTS.md (AGENTS.md)" in block
+    assert "/fixtures/sample-app" not in block
     assert "Smoke routes" in block
 
 
@@ -253,7 +254,7 @@ def test_load_repo_context_skips_injection_when_disabled(
 def test_planner_context_block_uses_agents_context_block() -> None:
     ctx = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FILE)
     block = ctx.planner_context_block()
-    assert ctx.agents.to_context_block().strip() in block
+    assert ctx.agents.to_context_block(repo=ctx.repo).strip() in block
     assert "Acceptance Criteria" in block
     assert "smoke verification" in block
 
@@ -267,7 +268,7 @@ def test_repo_context_redacts_secrets_in_dry_run() -> None:
     assert "sample-app" in output
     assert "smoke verification" in output
     assert "Planner Context" in output
-    assert ctx.agents.to_context_block().strip() in output
+    assert ctx.agents.to_context_block(repo=ctx.repo).strip() in output
     assert "pip install -r requirements.txt" in output
 
 

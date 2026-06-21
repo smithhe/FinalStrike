@@ -37,7 +37,7 @@ class RepoContext(BaseModel):
         """Assemble planner-facing context using AGENTS.md context block."""
         blocks: list[str] = []
 
-        agents_block = self.agents.to_context_block()
+        agents_block = self.agents.to_context_block(repo=self.repo)
         if agents_block:
             blocks.append(agents_block.rstrip())
 

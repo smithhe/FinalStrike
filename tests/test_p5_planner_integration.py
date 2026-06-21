@@ -13,12 +13,15 @@ from finalstrike.config.context import load_repo_context
 from finalstrike.config.models import APIConfig, LayerStatus, VerificationPlan
 from finalstrike.fixture_capabilities import load_capabilities
 from finalstrike.planner.planner import generate_verification_plan
+from finalstrike.planner.prompt import build_planner_messages
 from finalstrike.runners.api import run_api_layer
 from tests.conftest import ACCEPTANCE_FILE, ACCEPTANCE_SMOKE, FIXTURE_REPO
 from tests.support.llm_cassette import (
     ReplayCassetteProvider,
     assert_cassette_matches_context,
     load_planner_cassette,
+    messages_sha256,
+    serialize_messages,
 )
 from tests.support.plan_assertions import (
     assert_plan_covers_acceptance,
@@ -83,6 +86,23 @@ def test_planner_cassette_meta_is_current(smoke_planner_cassette) -> None:
     assert cassette.meta.id == SMOKE_CASSETTE_ID
     assert cassette.meta.phase == 5
     assert cassette.meta.component == "planner"
+
+
+@pytest.mark.llm_cassette
+def test_planner_messages_stable_across_repo_absolute_path(
+    smoke_planner_cassette,
+) -> None:
+    """Cassette hashes must not depend on where the repo is cloned."""
+    ctx_a = load_repo_context(
+        FIXTURE_REPO,
+        acceptance_path=ACCEPTANCE_SMOKE,
+        inject_secrets=False,
+    )
+    other_root = FIXTURE_REPO.parent / "sample-app-mirror"
+    ctx_b = ctx_a.model_copy(update={"repo": other_root})
+    msgs_a = serialize_messages(build_planner_messages(ctx_a))
+    msgs_b = serialize_messages(build_planner_messages(ctx_b))
+    assert messages_sha256(msgs_a) == messages_sha256(msgs_b)
 
 
 @pytest.mark.llm_cassette

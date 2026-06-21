@@ -18,12 +18,23 @@ class AgentsContext(BaseModel):
     content: str = ""
     present: bool = False
 
-    def to_context_block(self) -> str:
+    def to_context_block(self, *, repo: Path | None = None) -> str:
         """Return a markdown block suitable for LLM context injection."""
         if not self.present or not self.content.strip():
             return ""
-        header = f"## AGENTS.md ({self.path})" if self.path else "## AGENTS.md"
+        display = self._display_path(repo)
+        header = f"## AGENTS.md ({display})"
         return f"{header}\n\n{self.content.rstrip()}\n"
+
+    def _display_path(self, repo: Path | None) -> str:
+        if self.path is None:
+            return AGENTS_FILENAME
+        if repo is not None:
+            try:
+                return str(self.path.resolve().relative_to(repo.resolve()))
+            except ValueError:
+                pass
+        return self.path.name
 
 
 def load_agents(repo: Path) -> AgentsContext:
