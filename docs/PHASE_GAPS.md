@@ -40,7 +40,7 @@ pytest tests/test_phase_guardrails.py -q
 
 | Phase | Pre-flight |
 |-------|------------|
-| P4 | Use `acceptance-smoke.md`; health checks in `capabilities.yaml` |
+| P4 | Use `acceptance-smoke.md`; health checks in `capabilities.yaml`; optional `--plan` for extra API steps |
 | P5 | Ollama or OpenAI-compatible API running; `doctor` green for LLM |
 | P6 | `doctor` shows ffmpeg + input tools; extend fixture or use smoke UI routes |
 | P7 | P3+P4+P6 paths produce layer results; artifact dir layout from P3 |

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -134,6 +134,8 @@ class APIExpectation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: int
+    json_paths: dict[str, Any] | None = None
+    headers: dict[str, str] | None = None
 
 
 class APIPlanStep(BaseModel):
@@ -142,6 +144,8 @@ class APIPlanStep(BaseModel):
     method: str
     path: str
     expect: APIExpectation
+    body: Any | None = None
+    headers: dict[str, str] | None = None
 
 
 class UIPlanStep(BaseModel):
@@ -255,6 +259,7 @@ class APICheckResult(BaseModel):
     actual_status: int | None = None
     duration_ms: int = 0
     response_body: str = ""
+    error: str | None = None
 
 
 class APILayerResult(BaseModel):

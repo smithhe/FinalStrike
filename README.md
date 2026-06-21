@@ -58,10 +58,10 @@ finalstrike plan --repo fixtures/sample-app --acceptance fixtures/sample-app/acc
 finalstrike env up --repo fixtures/sample-app
 finalstrike env down --repo fixtures/sample-app
 
-# Run build + terminal layers; prints RunResult JSON
+# Run build + terminal + API layers; prints RunResult JSON
 finalstrike run --repo fixtures/sample-app \
   --acceptance fixtures/sample-app/acceptance-smoke.md \
-  --layers build,terminal
+  --layers env,build,terminal,api
 
 # Accept criteria from stdin (e.g. piped PR body)
 echo "## AC\n- item" | finalstrike plan --repo fixtures/sample-app --acceptance-stdin --dry-run

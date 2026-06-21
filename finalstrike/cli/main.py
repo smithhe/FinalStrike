@@ -12,6 +12,7 @@ from rich.console import Console
 
 from finalstrike import __version__
 from finalstrike.config.context import load_repo_context
+from finalstrike.config.plan import load_verification_plan
 from finalstrike.config.loader import format_validation_error, load_config
 from finalstrike.config.models import LayerStatus
 from finalstrike.env.orchestrator import EnvOrchestrator
@@ -392,7 +393,18 @@ def run(
         Optional[str],
         typer.Option(
             "--layers",
-            help="Comma-separated layers to run: env,build,terminal.",
+            help="Comma-separated layers to run: env,build,terminal,api.",
+        ),
+    ] = None,
+    plan: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--plan",
+            "-p",
+            help="Path to VerificationPlan JSON (optional API checks beyond yaml health).",
+            file_okay=True,
+            dir_okay=False,
+            resolve_path=True,
         ),
     ] = None,
     branch: Annotated[
@@ -423,11 +435,23 @@ def run(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc
 
+    verification_plan = None
+    if plan is not None:
+        try:
+            verification_plan = load_verification_plan(plan)
+        except FileNotFoundError as exc:
+            console.print(f"[red]Error:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+        except ValueError as exc:
+            console.print(f"[red]Error:[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+
     result = execute_run(
         context,
         layers=selected_layers,
         branch=branch,
         health_timeout=health_timeout,
+        plan=verification_plan,
     )
     typer.echo(format_run_result_json(result))
     if result.status.value == "failed":

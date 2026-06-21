@@ -1,4 +1,4 @@
-"""Partial run orchestration for P2–P3 layers."""
+"""Partial run orchestration for P2–P4 layers."""
 
 from __future__ import annotations
 
@@ -12,12 +12,14 @@ from finalstrike.config.models import (
     RunLayers,
     RunResult,
     RunStatus,
+    VerificationPlan,
 )
 from finalstrike.env.orchestrator import EnvOrchestrator
+from finalstrike.runners.api import run_api_layer
 from finalstrike.runners.build import run_build_layer
 from finalstrike.runners.terminal import run_terminal_layer
 
-VALID_LAYERS = frozenset({"env", "build", "terminal"})
+VALID_LAYERS = frozenset({"env", "build", "terminal", "api"})
 
 
 def new_run_id() -> str:
@@ -45,6 +47,8 @@ def execute_run(
     fail_fast: bool | None = None,
     health_timeout: float = 60.0,
     command_timeout: float | None = 600.0,
+    plan: VerificationPlan | None = None,
+    api_timeout: float = 30.0,
 ) -> RunResult:
     """Execute selected verification layers and aggregate a RunResult."""
     run_id = new_run_id()
@@ -86,6 +90,17 @@ def execute_run(
                 timeout=command_timeout,
                 max_retries=context.config.policy.max_test_retries,
             )
+            if run_layers.terminal.status == LayerStatus.FAILED:
+                abort = policy_fail_fast
+
+        if "api" in layers and not abort:
+            run_layers.api = run_api_layer(
+                context.config.api,
+                plan=plan,
+                subprocess_env=context.subprocess_env,
+                secrets=context.secrets,
+                timeout=api_timeout,
+            )
     finally:
         if env_orchestrator is not None and "env" in layers:
             env_orchestrator.down()
@@ -97,7 +112,7 @@ def execute_run(
         branch=branch,
         status=status,
         layers=run_layers,
-        gaps=[],
+        gaps=list(plan.gaps) if plan is not None else [],
     )
     _write_run_result(context, result)
     return result
@@ -111,6 +126,8 @@ def _aggregate_status(run_layers: RunLayers, requested: list[str]) -> RunStatus:
         layer_results.append(run_layers.build.status)
     if "terminal" in requested and run_layers.terminal is not None:
         layer_results.append(run_layers.terminal.status)
+    if "api" in requested and run_layers.api is not None:
+        layer_results.append(run_layers.api.status)
 
     if any(status == LayerStatus.FAILED for status in layer_results):
         return RunStatus.FAILED

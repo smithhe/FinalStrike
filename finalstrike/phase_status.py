@@ -15,10 +15,9 @@ class PhaseModule:
     summary: str
 
 
-IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3})
+IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4})
 
 STUB_MODULES: tuple[PhaseModule, ...] = (
-    PhaseModule("finalstrike/runners/api.py", 4, "API HTTP check runner"),
     PhaseModule("finalstrike/planner/", 5, "LLM test planner"),
     PhaseModule("finalstrike/providers/openai_compat.py", 5, "OpenAI-compatible adapter"),
     PhaseModule("finalstrike/computer_use/", 6, "Computer-use action loop"),

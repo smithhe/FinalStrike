@@ -41,7 +41,11 @@ def test_parse_layers_defaults() -> None:
 
 def test_parse_layers_unknown() -> None:
     with pytest.raises(ValueError, match="Unknown layer"):
-        parse_layers("env,api")
+        parse_layers("env,ui")
+
+
+def test_parse_layers_includes_api() -> None:
+    assert parse_layers("env,api") == ["env", "api"]
 
 
 def test_run_build_layer_success(tmp_path: Path) -> None:
