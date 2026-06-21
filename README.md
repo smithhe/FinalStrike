@@ -31,10 +31,23 @@ Full design, data models, and phased implementation plan: **[PLAN.html](PLAN.htm
 
 ## Quick start
 
+Requires Python 3.11+ (3.12 recommended). On Debian/Ubuntu-based systems, install into a project virtualenv — system `pip` is blocked by [PEP 668](https://peps.python.org/pep-0668/).
+
 ```bash
+# Create and activate a virtualenv (once per machine)
+python3 -m venv .venv
+source .venv/bin/activate
+
 # Install in development mode
 pip install -e ".[dev]"
 
+# Run the test suite (needs fixture secrets; see Development below)
+pytest -q
+```
+
+With the venv activated, try the CLI:
+
+```bash
 # Validate fixture repo config
 evalforge validate-config --repo fixtures/sample-app
 
@@ -56,6 +69,21 @@ echo "## AC\n- item" | evalforge plan --repo fixtures/sample-app --acceptance-st
 # Export JSON schemas from Pydantic models
 python -m evalforge.config.export_schemas
 ```
+
+Without activating the venv, prefix commands with `.venv/bin/` (e.g. `.venv/bin/evalforge`, `.venv/bin/pytest`).
+
+### Development
+
+- Dependencies live in `.venv` (gitignored). Re-run `pip install -e ".[dev]"` after pulling dependency changes.
+- If `python3 -m venv` fails, install the venv package for your Python version (e.g. `sudo apt install python3.12-venv`).
+- Tests expect a local secrets vault at `fixtures/sample-app/.evalforge/secrets.env` (gitignored):
+
+  ```
+  OPENAI_API_KEY=fixture-test-key-not-real
+  SLACK_BOT_TOKEN=fixture-slack-token
+  ```
+
+  Without it, 6 tests in `tests/test_p1_context.py` fail.
 
 ## Project layout
 
@@ -81,4 +109,6 @@ See [PLAN.html](PLAN.html) section 8 for the full phase roadmap.
 
 ## License
 
-MIT
+EvalForge is licensed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). You may use, modify, and distribute the software for **noncommercial purposes** at no charge (personal use, hobby projects, education, charities, government, and similar uses — see [LICENSE](LICENSE) for full terms).
+
+**Commercial use** requires a separate paid license. Contact the project maintainer to obtain commercial terms.
