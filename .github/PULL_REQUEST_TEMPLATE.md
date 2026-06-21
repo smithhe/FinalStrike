@@ -24,10 +24,12 @@
 <!-- Step-by-step instructions for a reviewer to reproduce and verify the change. Include setup, commands, and what to look for. -->
 
 ```bash
-# Example:
-# source .venv/bin/activate
-# pytest -q path/to/relevant/tests
-# finalstrike doctor --repo fixtures/sample-app
+# Debian/Ubuntu: system pip is blocked (PEP 668) — use the project venv:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+pytest -q path/to/relevant/tests
+finalstrike doctor --repo fixtures/sample-app
 ```
 
 **Expected result:**
