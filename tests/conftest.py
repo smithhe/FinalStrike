@@ -43,6 +43,10 @@ def platform_tools_available() -> bool:
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
+        "llm_cassette: replay committed LLM recordings (deterministic CI)",
+    )
+    config.addinivalue_line(
+        "markers",
         "requires_ollama: needs Ollama at http://localhost:11434 (P5 planner integration)",
     )
     config.addinivalue_line(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import yaml
@@ -9,6 +10,8 @@ import yaml
 from finalstrike.config.context import RepoContext
 from finalstrike.config.models import VerificationPlan
 
+
+PROMPT_TEMPLATE_VERSION = "1"
 
 SYSTEM_PROMPT = """You are FinalStrike's verification planner.
 
@@ -27,6 +30,12 @@ Rules:
 - Do not invent secrets or credentials.
 - Return ONLY valid JSON matching the VerificationPlan schema — no markdown fences or commentary.
 """
+
+
+def planner_prompt_version() -> str:
+    """Stable hash for cassette invalidation when planner prompts change."""
+    payload = f"{PROMPT_TEMPLATE_VERSION}\n{SYSTEM_PROMPT}"
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
 def verification_plan_schema_json() -> str:

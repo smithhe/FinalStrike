@@ -86,7 +86,7 @@ Without activating the venv, prefix commands with `.venv/bin/` (e.g. `.venv/bin/
   SLACK_BOT_TOKEN=fixture-slack-token
   ```
 
-  Without it, 6 tests in `tests/test_p1_context.py` fail.
+  Without it, 6 tests in `tests/test_p1_context.py` fail. LLM integration tests use committed cassettes in `tests/llm_recordings/` — no live API key required for default `pytest -q`.
 
 ## Project layout
 

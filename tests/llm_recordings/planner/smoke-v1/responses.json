@@ -1,0 +1,3 @@
+[
+  "{\"scenarios\": [{\"id\": \"ac-1\", \"source\": \"API health endpoint returns 200 on GET /health\", \"layers\": {\"terminal\": [], \"api\": [{\"method\": \"GET\", \"path\": \"/health\", \"expect\": {\"status\": 200}}], \"ui\": []}}, {\"id\": \"ac-2\", \"source\": \"Frontend landing page loads at / with title \\\"Sample App\\\"\", \"layers\": {\"terminal\": [], \"api\": [], \"ui\": [{\"instruction\": \"Open http://localhost:3000/ and verify the page title is \\\"Sample App\\\"\"}]}}, {\"id\": \"ac-3\", \"source\": \"Unit tests pass via `pytest -q`\", \"layers\": {\"terminal\": [{\"command\": \"pytest -q\", \"reason\": \"Run unit tests from finalstrike.yaml\"}], \"api\": [], \"ui\": []}}], \"gaps\": []}"
+]

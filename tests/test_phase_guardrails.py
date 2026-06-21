@@ -85,6 +85,15 @@ def test_capabilities_planned_not_duplicated_in_implemented() -> None:
     assert implemented_paths.isdisjoint(planned_paths)
 
 
+def test_smoke_planner_cassette_present() -> None:
+    from tests.support.llm_cassette import DEFAULT_SMOKE_CASSETTE_ID, load_planner_cassette
+
+    cassette = load_planner_cassette(DEFAULT_SMOKE_CASSETTE_ID)
+    assert cassette.meta.component == "planner"
+    assert cassette.responses
+    assert cassette.canonical_plan["scenarios"]
+
+
 @pytest.mark.requires_ollama
 def test_ollama_marker_skips_when_unavailable() -> None:
     """Placeholder for P5 integration tests; skipped unless Ollama is running."""

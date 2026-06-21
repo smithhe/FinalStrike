@@ -1,0 +1,49 @@
+{
+  "gaps": [],
+  "scenarios": [
+    {
+      "id": "ac-1",
+      "layers": {
+        "api": [
+          {
+            "expect": {
+              "status": 200
+            },
+            "method": "GET",
+            "path": "/health"
+          }
+        ],
+        "terminal": [],
+        "ui": []
+      },
+      "source": "API health endpoint returns 200 on GET /health"
+    },
+    {
+      "id": "ac-2",
+      "layers": {
+        "api": [],
+        "terminal": [],
+        "ui": [
+          {
+            "instruction": "Open http://localhost:3000/ and verify the page title is \"Sample App\""
+          }
+        ]
+      },
+      "source": "Frontend landing page loads at / with title \"Sample App\""
+    },
+    {
+      "id": "ac-3",
+      "layers": {
+        "api": [],
+        "terminal": [
+          {
+            "command": "pytest -q",
+            "reason": "Run unit tests from finalstrike.yaml"
+          }
+        ],
+        "ui": []
+      },
+      "source": "Unit tests pass via `pytest -q`"
+    }
+  ]
+}

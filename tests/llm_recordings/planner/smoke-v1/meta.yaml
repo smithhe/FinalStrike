@@ -1,0 +1,14 @@
+id: smoke-v1
+phase: 5
+component: planner
+acceptance: fixtures/sample-app/acceptance-smoke.md
+acceptance_sha256: d90adc0a30bea30547a4c31db7d5b9db6eb6aa6969cfffb9ddc806354c84a988
+prompt_version: c59d39b2c27ed2ef
+messages_sha256: 068ff3035af129c8aef011851fdda8a94209ebbd679174d3098b7eae4b381ce5
+recorded_with:
+  base_url: http://localhost:11434/v1
+  model: llama3
+  temperature: 0.2
+  source: hand-authored canonical plan for deterministic CI replay
+attempts: 1
+notes: Refresh with FINALSTRIKE_RECORD_LLM=1 when prompt or acceptance changes.

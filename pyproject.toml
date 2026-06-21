@@ -34,6 +34,7 @@ packages = ["finalstrike"]
 testpaths = ["tests"]
 markers = [
     "integration: tests that start real services or network listeners",
+    "llm_cassette: replay committed LLM recordings (deterministic CI)",
     "requires_ollama: needs Ollama at http://localhost:11434 (P5 planner integration)",
     "requires_platform_tools: needs ffmpeg and xdotool or ydotool (P6/P7)",
 ]
