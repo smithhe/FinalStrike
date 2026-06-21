@@ -34,8 +34,8 @@ implemented vs planned.
 
 Use the structure in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) for every PR. Fill in all four sections:
 
-1. **What** — brief description of what changed.
-2. **Why** — motivation, problem solved, or trade-off.
+1. **What was changed** — brief description of what changed.
+2. **Why we changed it** — motivation, problem solved, or trade-off.
 3. **Validation** — tests and checks you ran (commands, scenarios, expected outcomes). Default suite: `source .venv/bin/activate && pytest -q`.
 4. **How to test locally** — step-by-step instructions for reviewers, including setup, commands, and what success looks like.
 

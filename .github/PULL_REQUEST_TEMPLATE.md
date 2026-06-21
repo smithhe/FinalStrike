@@ -1,10 +1,10 @@
-## What
+## What was changed
 
 <!-- Brief summary of the change (1–3 sentences). What behavior, files, or workflows changed? -->
 
 
 
-## Why
+## Why we changed it
 
 <!-- Motivation, problem being solved, or trade-off accepted. Link issues if applicable. -->
 
