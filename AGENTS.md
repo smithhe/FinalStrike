@@ -5,8 +5,9 @@
 FinalStrike is a single Python package (`finalstrike`) exposing a Typer CLI. `fixtures/sample-app/` is the integration test target repo (not a separate product). Python 3.12 is used.
 
 ### Environment
-- Dependencies are installed into a project virtualenv at `.venv` (gitignored). Activate with `source .venv/bin/activate` or prefix commands with `.venv/bin/` (e.g. `.venv/bin/pytest`, `.venv/bin/finalstrike`). The update script keeps `.venv` in sync.
-- The test suite needs a gitignored local secrets vault at `fixtures/sample-app/.finalstrike/secrets.env` containing fake values `OPENAI_API_KEY=fixture-test-key-not-real` and `SLACK_BOT_TOKEN=fixture-slack-token`. Without it, 6 tests in `tests/test_p1_context.py` fail. The update script recreates it if missing.
+- **Local setup:** run `./scripts/setup-dev.sh` from the repo root (see [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)). Use `./scripts/setup-dev.sh --recreate-venv` when `.venv/bin/pip` fails with "required file not found" (stale virtualenv).
+- Dependencies are installed into a project virtualenv at `.venv` (gitignored). Activate with `source .venv/bin/activate` or prefix commands with `.venv/bin/` (e.g. `.venv/bin/pytest`, `.venv/bin/finalstrike`).
+- The test suite needs a gitignored local secrets vault at `fixtures/sample-app/.finalstrike/secrets.env` containing fake values `OPENAI_API_KEY=fixture-test-key-not-real` and `SLACK_BOT_TOKEN=fixture-slack-token`. Without it, 6 tests in `tests/test_p1_context.py` fail. The setup script recreates it if missing.
 
 ### Phase gaps (P5+)
 
@@ -37,6 +38,6 @@ Use the structure in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_T
 1. **What was changed** — brief description of what changed.
 2. **Why we changed it** — motivation, problem solved, or trade-off.
 3. **Validation** — tests and checks you ran (commands, scenarios, expected outcomes). Default suite: `source .venv/bin/activate && pytest -q`.
-4. **How to test locally** — step-by-step instructions for reviewers, including setup, commands, and what success looks like.
+4. **How to test locally** — step-by-step instructions for reviewers, including [local environment setup](docs/LOCAL_SETUP.md) when tests or CLI are involved, then PR-specific commands and what success looks like.
 
 Cloud agents should follow the same sections when creating or updating PR descriptions.

@@ -31,18 +31,24 @@ Full design, data models, and phased implementation plan: **[PLAN.html](PLAN.htm
 
 ## Quick start
 
-Requires Python 3.11+ (3.12 recommended). On Debian/Ubuntu-based systems, install into a project virtualenv — system `pip` is blocked by [PEP 668](https://peps.python.org/pep-0668/).
+Requires Python 3.11+ (3.12 recommended). **First-time setup:** see **[docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)** (venv, fixture secrets, common failures).
 
 ```bash
-# Create and activate a virtualenv (once per machine)
+# One-command bootstrap (from repo root)
+./scripts/setup-dev.sh
+source .venv/bin/activate
+pytest -q
+```
+
+On Debian/Ubuntu, system `pip` is blocked by [PEP 668](https://peps.python.org/pep-0668/) — always use the project `.venv`. If `.venv/bin/pip` fails with "required file not found", run `./scripts/setup-dev.sh --recreate-venv`.
+
+Manual equivalent:
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install in development mode
 pip install -e ".[dev]"
-
-# Run the test suite (needs fixture secrets; see Development below)
-pytest -q
+# See docs/LOCAL_SETUP.md for the fixture secrets vault (required for pytest)
 ```
 
 With the venv activated, try the CLI:
@@ -77,16 +83,13 @@ Without activating the venv, prefix commands with `.venv/bin/` (e.g. `.venv/bin/
 
 ### Development
 
-- Dependencies live in `.venv` (gitignored). Re-run `pip install -e ".[dev]"` after pulling dependency changes.
-- If `python3 -m venv` fails, install the venv package for your Python version (e.g. `sudo apt install python3.12-venv`).
-- Tests expect a local secrets vault at `fixtures/sample-app/.finalstrike/secrets.env` (gitignored):
+See **[docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)** for the full checklist (venv, secrets vault, `pytest` on `PATH`, troubleshooting).
 
-  ```
-  OPENAI_API_KEY=fixture-test-key-not-real
-  SLACK_BOT_TOKEN=fixture-slack-token
-  ```
-
-  Without it, 6 tests in `tests/test_p1_context.py` fail. LLM integration tests use committed cassettes in `tests/llm_recordings/` — no live API key required for default `pytest -q`.
+- Run `./scripts/setup-dev.sh` after clone or when `.venv` is broken; `./scripts/setup-dev.sh --recreate-venv` forces a fresh virtualenv.
+- Dependencies live in `.venv` (gitignored). Re-run setup or `pip install -e ".[dev]"` after pulling dependency changes.
+- **Activate** the venv before `pytest -q` so subprocess-based tests find `pytest` on `PATH` (see LOCAL_SETUP.md).
+- Tests require `fixtures/sample-app/.finalstrike/secrets.env` with fake keys — the setup script creates it if missing.
+- Default `pytest -q` uses committed LLM cassettes; no live API key required.
 
 ## Project layout
 
@@ -111,8 +114,6 @@ PLAN.html           # Implementation plan
 **Phase 4 (P4)** — API check runner: HTTP health checks from `finalstrike.yaml`, plan-driven API steps, response assertions, secret redaction in evidence.
 
 **Phase 5 (P5)** — LLM test planner: `openai_compat` provider, AC + context → `VerificationPlan` JSON via `finalstrike plan --no-dry-run`, schema validation with retry.
-
-# P6 computer-use (Phase 6)
 
 **Phase 6 (P6)** — computer-use spike on Linux: screenshot + a11y context → vision LLM
 action → OS input (`xdotool`/`ydotool`), standalone `finalstrike computer-use run`,
