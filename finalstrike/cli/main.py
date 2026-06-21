@@ -1,4 +1,4 @@
-"""EvalForge Typer CLI."""
+"""FinalStrike Typer CLI."""
 
 from __future__ import annotations
 
@@ -10,15 +10,15 @@ import yaml
 from pydantic import ValidationError
 from rich.console import Console
 
-from evalforge import __version__
-from evalforge.config.context import load_repo_context
-from evalforge.config.loader import format_validation_error, load_config
-from evalforge.config.models import LayerStatus
-from evalforge.env.orchestrator import EnvOrchestrator
-from evalforge.orchestrator.run import execute_run, format_run_result_json, parse_layers
+from finalstrike import __version__
+from finalstrike.config.context import load_repo_context
+from finalstrike.config.loader import format_validation_error, load_config
+from finalstrike.config.models import LayerStatus
+from finalstrike.env.orchestrator import EnvOrchestrator
+from finalstrike.orchestrator.run import execute_run, format_run_result_json, parse_layers
 
 app = typer.Typer(
-    name="evalforge",
+    name="finalstrike",
     help="Cursor cloud agent testing mirror — orchestrator and evidence recorder.",
     no_args_is_help=True,
 )
@@ -29,7 +29,7 @@ console = Console(stderr=True)
 
 def version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"evalforge {__version__}")
+        typer.echo(f"finalstrike {__version__}")
         raise typer.Exit()
 
 
@@ -46,7 +46,7 @@ def main(
         ),
     ] = None,
 ) -> None:
-    """EvalForge CLI."""
+    """FinalStrike CLI."""
 
 
 @app.command("validate-config")
@@ -56,14 +56,14 @@ def validate_config(
         typer.Option(
             "--repo",
             "-r",
-            help="Path to the target repository containing evalforge.yaml.",
+            help="Path to the target repository containing finalstrike.yaml.",
             file_okay=False,
             dir_okay=True,
             resolve_path=True,
         ),
     ],
 ) -> None:
-    """Load and validate evalforge.yaml from a target repo."""
+    """Load and validate finalstrike.yaml from a target repo."""
     if not repo.exists():
         console.print(f"[red]Error:[/red] Repo path does not exist: {repo}")
         raise typer.Exit(code=1)
@@ -89,7 +89,7 @@ def validate_config(
     console.print(
         f"[green]✓[/green] Configuration valid for project "
         f"[bold]{config.project.name}[/bold] "
-        f"(evalforge.yaml v{config.version})"
+        f"(finalstrike.yaml v{config.version})"
     )
 
 
@@ -100,7 +100,7 @@ def plan(
         typer.Option(
             "--repo",
             "-r",
-            help="Path to the target repository containing evalforge.yaml.",
+            help="Path to the target repository containing finalstrike.yaml.",
             file_okay=False,
             dir_okay=True,
             resolve_path=True,
@@ -271,7 +271,7 @@ def env_up(
 
     console.print(
         f"[green]✓[/green] Environment ready "
-        f"({result.duration_ms}ms, processes running — use `evalforge env down` to stop)"
+        f"({result.duration_ms}ms, processes running — use `finalstrike env down` to stop)"
     )
 
 
@@ -313,7 +313,7 @@ def run(
         typer.Option(
             "--repo",
             "-r",
-            help="Path to the target repository containing evalforge.yaml.",
+            help="Path to the target repository containing finalstrike.yaml.",
             file_okay=False,
             dir_okay=True,
             resolve_path=True,

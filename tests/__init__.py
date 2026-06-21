@@ -1,1 +1,1 @@
-"""EvalForge test suite."""
+"""FinalStrike test suite."""

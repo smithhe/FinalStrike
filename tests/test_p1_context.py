@@ -10,12 +10,12 @@ import pytest
 import yaml
 from typer.testing import CliRunner
 
-from evalforge.cli.main import app
-from evalforge.config.acceptance import load_acceptance
-from evalforge.config.agents import load_agents
-from evalforge.config.context import load_repo_context
-from evalforge.config.environment import load_environment
-from evalforge.config.secrets import (
+from finalstrike.cli.main import app
+from finalstrike.config.acceptance import load_acceptance
+from finalstrike.config.agents import load_agents
+from finalstrike.config.context import load_repo_context
+from finalstrike.config.environment import load_environment
+from finalstrike.config.secrets import (
     apply_to_environ,
     load_secrets,
     parse_secrets_content,
@@ -147,7 +147,7 @@ def test_parse_secrets_content_handles_export_prefix() -> None:
 
 
 def test_load_secrets_from_sample_app() -> None:
-    secrets, warnings = load_secrets(FIXTURE_REPO, ".evalforge/secrets.env")
+    secrets, warnings = load_secrets(FIXTURE_REPO, ".finalstrike/secrets.env")
     assert warnings == []
     assert "OPENAI_API_KEY" in secrets
     assert secrets["OPENAI_API_KEY"] == "fixture-test-key-not-real"
@@ -155,7 +155,7 @@ def test_load_secrets_from_sample_app() -> None:
 
 
 def test_load_secrets_missing_file(tmp_path: Path) -> None:
-    secrets, warnings = load_secrets(tmp_path, ".evalforge/secrets.env")
+    secrets, warnings = load_secrets(tmp_path, ".finalstrike/secrets.env")
     assert secrets == {}
     assert len(warnings) == 1
     assert "not found" in warnings[0].lower()
@@ -290,7 +290,7 @@ def test_plan_dry_run_sample_app() -> None:
         ],
     )
     assert result.exit_code == 0
-    assert "EvalForge Plan Context" in result.stdout
+    assert "FinalStrike Plan Context" in result.stdout
     assert "sample-app" in result.stdout
     assert "Task list" in result.stdout
     assert "fixture-test-key-not-real" not in result.stdout
@@ -391,6 +391,6 @@ def _write_minimal_repo(tmp_path: Path) -> None:
             "model": "m",
         },
     }
-    (tmp_path / "evalforge.yaml").write_text(
+    (tmp_path / "finalstrike.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )

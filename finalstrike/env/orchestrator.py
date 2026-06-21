@@ -10,17 +10,17 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from evalforge.config.environment import EnvironmentConfig
-from evalforge.config.models import EvalForgeConfig, EnvLayerResult, LayerStatus
-from evalforge.env.health import HealthCheckOutcome, wait_for_health
-from evalforge.env.state import (
+from finalstrike.config.environment import EnvironmentConfig
+from finalstrike.config.models import FinalStrikeConfig, EnvLayerResult, LayerStatus
+from finalstrike.env.health import HealthCheckOutcome, wait_for_health
+from finalstrike.env.state import (
     EnvState,
     ManagedProcess,
     clear_env_state,
     load_env_state,
     save_env_state,
 )
-from evalforge.runners.command import CommandRunResult, run_command
+from finalstrike.runners.command import CommandRunResult, run_command
 
 
 @dataclass
@@ -29,7 +29,7 @@ class EnvOrchestrator:
 
     repo: Path
     environment: EnvironmentConfig
-    config: EvalForgeConfig
+    config: FinalStrikeConfig
     subprocess_env: dict[str, str]
     health_timeout: float = 60.0
     _log_lines: list[str] = field(default_factory=list, init=False)

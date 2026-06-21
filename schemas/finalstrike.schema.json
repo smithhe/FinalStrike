@@ -73,7 +73,7 @@
           "type": "boolean"
         },
         "output_dir": {
-          "default": ".evalforge/runs",
+          "default": ".finalstrike/runs",
           "title": "Output Dir",
           "type": "string"
         }
@@ -180,7 +180,7 @@
       "additionalProperties": false,
       "properties": {
         "file": {
-          "default": ".evalforge/secrets.env",
+          "default": ".finalstrike/secrets.env",
           "title": "File",
           "type": "string"
         }
@@ -247,7 +247,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Root config model for evalforge.yaml in a target repo.",
+  "description": "Root config model for finalstrike.yaml in a target repo.",
   "properties": {
     "version": {
       "const": "1",
@@ -314,6 +314,6 @@
     "project",
     "llm"
   ],
-  "title": "EvalForgeConfig",
+  "title": "FinalStrikeConfig",
   "type": "object"
 }

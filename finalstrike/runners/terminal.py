@@ -5,14 +5,14 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from evalforge.config.models import (
+from finalstrike.config.models import (
     CommandConfig,
     LayerStatus,
     TerminalCommandResult,
     TerminalLayerResult,
 )
-from evalforge.runners.command import CommandRunResult, run_command
-from evalforge.runners.pytest_parser import parse_pytest_output
+from finalstrike.runners.command import CommandRunResult, run_command
+from finalstrike.runners.pytest_parser import parse_pytest_output
 
 
 def run_terminal_layer(

@@ -1,4 +1,4 @@
-"""Load and validate evalforge.yaml from a target repo."""
+"""Load and validate finalstrike.yaml from a target repo."""
 
 from __future__ import annotations
 
@@ -7,13 +7,13 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from evalforge.config.models import EvalForgeConfig
+from finalstrike.config.models import FinalStrikeConfig
 
-CONFIG_FILENAME = "evalforge.yaml"
+CONFIG_FILENAME = "finalstrike.yaml"
 
 
 def find_config_path(repo: Path) -> Path:
-    """Return the path to evalforge.yaml in the given repo."""
+    """Return the path to finalstrike.yaml in the given repo."""
     config_path = repo / CONFIG_FILENAME
     if not config_path.is_file():
         raise FileNotFoundError(
@@ -22,8 +22,8 @@ def find_config_path(repo: Path) -> Path:
     return config_path
 
 
-def load_config(repo: Path) -> EvalForgeConfig:
-    """Load and validate evalforge.yaml from a target repo directory."""
+def load_config(repo: Path) -> FinalStrikeConfig:
+    """Load and validate finalstrike.yaml from a target repo directory."""
     repo = repo.resolve()
     if not repo.is_dir():
         raise NotADirectoryError(f"Repo path is not a directory: {repo}")
@@ -38,7 +38,7 @@ def load_config(repo: Path) -> EvalForgeConfig:
     if not isinstance(raw, dict):
         raise ValueError(f"{CONFIG_FILENAME} must be a YAML mapping")
 
-    return EvalForgeConfig.model_validate(raw)
+    return FinalStrikeConfig.model_validate(raw)
 
 
 def format_validation_error(exc: ValidationError) -> str:

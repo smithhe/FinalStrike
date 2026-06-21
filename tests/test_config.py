@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from evalforge.config.loader import load_config
-from evalforge.config.models import EvalForgeConfig, RunResult, RunStatus, VerificationPlan
+from finalstrike.config.loader import load_config
+from finalstrike.config.models import FinalStrikeConfig, RunResult, RunStatus, VerificationPlan
 
 
 FIXTURE_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "sample-app"
@@ -20,9 +20,9 @@ def test_load_sample_app_config() -> None:
     assert config.api.health[0].path == "/health"
 
 
-def test_evalforge_config_requires_project() -> None:
+def test_finalstrike_config_requires_project() -> None:
     with pytest.raises(ValidationError):
-        EvalForgeConfig.model_validate({"version": "1", "llm": {"base_url": "x", "model": "y"}})
+        FinalStrikeConfig.model_validate({"version": "1", "llm": {"base_url": "x", "model": "y"}})
 
 
 def test_verification_plan_minimal() -> None:
@@ -136,9 +136,9 @@ def test_run_result_plan_shaped() -> None:
     assert len(result.gaps) == 1
 
 
-def test_evalforge_config_rejects_extra_fields() -> None:
+def test_finalstrike_config_rejects_extra_fields() -> None:
     with pytest.raises(ValidationError):
-        EvalForgeConfig.model_validate(
+        FinalStrikeConfig.model_validate(
             {
                 "version": "1",
                 "project": {"name": "x"},

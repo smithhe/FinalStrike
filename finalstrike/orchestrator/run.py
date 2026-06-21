@@ -6,16 +6,16 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from evalforge.config.context import RepoContext
-from evalforge.config.models import (
+from finalstrike.config.context import RepoContext
+from finalstrike.config.models import (
     LayerStatus,
     RunLayers,
     RunResult,
     RunStatus,
 )
-from evalforge.env.orchestrator import EnvOrchestrator
-from evalforge.runners.build import run_build_layer
-from evalforge.runners.terminal import run_terminal_layer
+from finalstrike.env.orchestrator import EnvOrchestrator
+from finalstrike.runners.build import run_build_layer
+from finalstrike.runners.terminal import run_terminal_layer
 
 VALID_LAYERS = frozenset({"env", "build", "terminal"})
 

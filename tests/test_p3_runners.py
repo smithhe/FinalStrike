@@ -9,13 +9,13 @@ import pytest
 import yaml
 from typer.testing import CliRunner
 
-from evalforge.cli.main import app
-from evalforge.config.context import load_repo_context
-from evalforge.config.models import CommandConfig, LayerStatus
-from evalforge.orchestrator.run import execute_run, parse_layers
-from evalforge.runners.build import run_build_layer
-from evalforge.runners.pytest_parser import parse_pytest_output
-from evalforge.runners.terminal import run_terminal_layer
+from finalstrike.cli.main import app
+from finalstrike.config.context import load_repo_context
+from finalstrike.config.models import CommandConfig, LayerStatus
+from finalstrike.orchestrator.run import execute_run, parse_layers
+from finalstrike.runners.build import run_build_layer
+from finalstrike.runners.pytest_parser import parse_pytest_output
+from finalstrike.runners.terminal import run_terminal_layer
 
 FIXTURE_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "sample-app"
 ACCEPTANCE_FILE = FIXTURE_REPO / "acceptance.md"

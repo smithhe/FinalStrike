@@ -5,17 +5,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from evalforge.config.models import EvalForgeConfig, VerificationPlan
+from finalstrike.config.models import FinalStrikeConfig, VerificationPlan
 
 
 def export_schemas(output_dir: Path | None = None) -> dict[str, Path]:
-    """Write JSON Schema files for EvalForgeConfig and VerificationPlan."""
+    """Write JSON Schema files for FinalStrikeConfig and VerificationPlan."""
     if output_dir is None:
         output_dir = Path(__file__).resolve().parents[2] / "schemas"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     exports = {
-        "evalforge.schema.json": EvalForgeConfig.model_json_schema(),
+        "finalstrike.schema.json": FinalStrikeConfig.model_json_schema(),
         "verification_plan.schema.json": VerificationPlan.model_json_schema(),
     }
 

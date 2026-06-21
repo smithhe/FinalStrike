@@ -13,13 +13,13 @@ import pytest
 import yaml
 from typer.testing import CliRunner
 
-from evalforge.cli.main import app
-from evalforge.config.context import load_repo_context
-from evalforge.config.environment import EnvironmentConfig
-from evalforge.config.models import EvalForgeConfig, LayerStatus
-from evalforge.env.health import wait_for_health
-from evalforge.env.orchestrator import EnvOrchestrator
-from evalforge.env.state import load_env_state
+from finalstrike.cli.main import app
+from finalstrike.config.context import load_repo_context
+from finalstrike.config.environment import EnvironmentConfig
+from finalstrike.config.models import FinalStrikeConfig, LayerStatus
+from finalstrike.env.health import wait_for_health
+from finalstrike.env.orchestrator import EnvOrchestrator
+from finalstrike.env.state import load_env_state
 
 FIXTURE_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "sample-app"
 ACCEPTANCE_FILE = FIXTURE_REPO / "acceptance.md"
@@ -46,7 +46,7 @@ def _write_minimal_env_repo(tmp_path: Path, *, port: int) -> Path:
             "health": [{"method": "GET", "path": "/", "expect_status": 200}],
         },
     }
-    (tmp_path / "evalforge.yaml").write_text(
+    (tmp_path / "finalstrike.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )
     cursor_dir = tmp_path / ".cursor"
@@ -76,7 +76,7 @@ def test_wait_for_health_success() -> None:
         start_new_session=True,
     )
     try:
-        from evalforge.config.models import HealthCheckConfig
+        from finalstrike.config.models import HealthCheckConfig
 
         outcomes = wait_for_health(
             f"http://127.0.0.1:{port}",
@@ -153,7 +153,7 @@ def test_env_up_skips_without_environment_json(tmp_path: Path) -> None:
             "model": "m",
         },
     }
-    (tmp_path / "evalforge.yaml").write_text(
+    (tmp_path / "finalstrike.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )
     result = runner.invoke(app, ["env", "up", "--repo", str(tmp_path)])

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import httpx
 
-from evalforge.config.models import HealthCheckConfig
+from finalstrike.config.models import HealthCheckConfig
 
 
 @dataclass(frozen=True)

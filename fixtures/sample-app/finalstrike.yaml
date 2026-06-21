@@ -1,4 +1,4 @@
-# evalforge.yaml — orchestration config for sample-app fixture
+# finalstrike.yaml — orchestration config for sample-app fixture
 version: "1"
 
 project:
@@ -32,12 +32,12 @@ ui:
   smoke_route: /
 
 secrets:
-  file: .evalforge/secrets.env
+  file: .finalstrike/secrets.env
 
 evidence:
   video: true
   screenshots: true
-  output_dir: .evalforge/runs
+  output_dir: .finalstrike/runs
 
 policy:
   fail_fast: false

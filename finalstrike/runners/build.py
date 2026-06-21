@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from evalforge.config.models import (
+from finalstrike.config.models import (
     BuildCommandResult,
     BuildLayerResult,
     CommandConfig,
     LayerStatus,
 )
-from evalforge.runners.command import run_command
+from finalstrike.runners.command import run_command
 
 
 def run_build_layer(

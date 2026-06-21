@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "evalforge"
+name = "finalstrike"
 version = "0.1.0"
 description = "Cursor cloud agent testing mirror — orchestrator and evidence recorder"
 readme = "README.md"
@@ -25,10 +25,10 @@ dev = [
 ]
 
 [project.scripts]
-evalforge = "evalforge.cli.main:app"
+finalstrike = "finalstrike.cli.main:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["evalforge"]
+packages = ["finalstrike"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

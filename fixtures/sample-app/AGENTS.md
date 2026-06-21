@@ -1,6 +1,6 @@
-# Sample App — EvalForge fixture
+# Sample App — FinalStrike fixture
 
-Minimal API + static frontend used for EvalForge integration testing.
+Minimal API + static frontend used for FinalStrike integration testing.
 
 ## Services
 

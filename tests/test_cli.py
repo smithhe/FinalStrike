@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from typer.testing import CliRunner
 
-from evalforge.cli.main import app
+from finalstrike.cli.main import app
 
 FIXTURE_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "sample-app"
 runner = CliRunner()
@@ -20,14 +20,14 @@ def test_validate_config_success_on_sample_app() -> None:
     assert "sample-app" in result.stderr
 
 
-def test_validate_config_missing_evalforge_yaml(tmp_path: Path) -> None:
+def test_validate_config_missing_finalstrike_yaml(tmp_path: Path) -> None:
     result = runner.invoke(app, ["validate-config", "--repo", str(tmp_path)])
     assert result.exit_code == 1
-    assert "No evalforge.yaml found" in result.stderr
+    assert "No finalstrike.yaml found" in result.stderr
 
 
 def test_validate_config_bad_yaml(tmp_path: Path) -> None:
-    config_path = tmp_path / "evalforge.yaml"
+    config_path = tmp_path / "finalstrike.yaml"
     config_path.write_text("version: [unclosed\n", encoding="utf-8")
     result = runner.invoke(app, ["validate-config", "--repo", str(tmp_path)])
     assert result.exit_code == 1
@@ -44,7 +44,7 @@ def test_validate_config_invalid_provider(tmp_path: Path) -> None:
             "model": "m",
         },
     }
-    (tmp_path / "evalforge.yaml").write_text(
+    (tmp_path / "finalstrike.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )
     result = runner.invoke(app, ["validate-config", "--repo", str(tmp_path)])
@@ -63,7 +63,7 @@ def test_validate_config_rejects_extra_llm_fields(tmp_path: Path) -> None:
             "api_key": "secret",
         },
     }
-    (tmp_path / "evalforge.yaml").write_text(
+    (tmp_path / "finalstrike.yaml").write_text(
         yaml.safe_dump(config), encoding="utf-8"
     )
     result = runner.invoke(app, ["validate-config", "--repo", str(tmp_path)])

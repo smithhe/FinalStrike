@@ -1,4 +1,4 @@
-"""Pydantic models for evalforge.yaml, VerificationPlan, and RunResult."""
+"""Pydantic models for finalstrike.yaml, VerificationPlan, and RunResult."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-# --- evalforge.yaml (section 4.1) ---
+# --- finalstrike.yaml (section 4.1) ---
 
 
 class ProjectConfig(BaseModel):
@@ -75,7 +75,7 @@ class UIConfig(BaseModel):
 class SecretsConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    file: str = ".evalforge/secrets.env"
+    file: str = ".finalstrike/secrets.env"
 
 
 class EvidenceConfig(BaseModel):
@@ -83,7 +83,7 @@ class EvidenceConfig(BaseModel):
 
     video: bool = True
     screenshots: bool = True
-    output_dir: str = ".evalforge/runs"
+    output_dir: str = ".finalstrike/runs"
 
 
 class SlackConfig(BaseModel):
@@ -102,8 +102,8 @@ class PolicyConfig(BaseModel):
     max_ui_retries: int = 4
 
 
-class EvalForgeConfig(BaseModel):
-    """Root config model for evalforge.yaml in a target repo."""
+class FinalStrikeConfig(BaseModel):
+    """Root config model for finalstrike.yaml in a target repo."""
 
     model_config = ConfigDict(extra="forbid")
 

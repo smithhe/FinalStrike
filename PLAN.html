@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EvalForge — Cursor Cloud Agent Testing Mirror</title>
+    <title>FinalStrike — Cursor Cloud Agent Testing Mirror</title>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -206,7 +206,7 @@
 <body>
 
 <div class="hero">
-    <h1>EvalForge</h1>
+    <h1>FinalStrike</h1>
     <p class="subtitle">
         A standalone Python orchestrator that mirrors <strong>only the testing workflow</strong> of Cursor cloud agents —
         environment bootstrap, build/lint gates, terminal tests, API checks, and computer-use UI verification —
@@ -226,7 +226,7 @@
 
         <div class="callout scope">
             <h4>Explicitly out of scope</h4>
-            <p>EvalForge mirrors <strong>testing only</strong>. It does not implement code generation, subagent spawning, CI auto-fix loops, static Bugbot/Security review, PR creation, or any other Cursor cloud agent capability outside verification.</p>
+            <p>FinalStrike mirrors <strong>testing only</strong>. It does not implement code generation, subagent spawning, CI auto-fix loops, static Bugbot/Security review, PR creation, or any other Cursor cloud agent capability outside verification.</p>
         </div>
 
         <h3>1.1 What Cursor cloud agents do when testing (our reference model)</h3>
@@ -254,13 +254,13 @@
             <tr><td>LLM role</td><td><strong>Required</strong>, bring-your-own provider; derives executable steps from acceptance criteria at runtime</td></tr>
             <tr><td>LLM transport</td><td>Single <strong>OpenAI-compatible</strong> client (<code>base_url</code> + <code>api_key</code> configurable) — supports cloud APIs, Ollama, OpenRouter, LiteLLM, etc.</td></tr>
             <tr><td>Acceptance criteria input</td><td>Markdown passed at run time (CLI arg / PR body) — not committed to repo by default</td></tr>
-            <tr><td>Repo config</td><td><code>evalforge.yaml</code> + optional <code>AGENTS.md</code>; env via <code>.cursor/environment.json</code></td></tr>
+            <tr><td>Repo config</td><td><code>finalstrike.yaml</code> + optional <code>AGENTS.md</code>; env via <code>.cursor/environment.json</code></td></tr>
             <tr><td>Git integration</td><td>Manual — point at local path; <code>--branch</code> is <strong>metadata only</strong> (no auto checkout in v1)</td></tr>
-            <tr><td>Auth during tests</td><td>Plain gitignored <code>.evalforge/secrets.env</code> injected into process env (no encryption in v1)</td></tr>
+            <tr><td>Auth during tests</td><td>Plain gitignored <code>.finalstrike/secrets.env</code> injected into process env (no encryption in v1)</td></tr>
             <tr><td>Outputs</td><td>HTML report (first), then Slack bot with file uploads; full desktop video + per-step screenshots</td></tr>
             <tr><td>Success criteria</td><td>Evidence bundle parity with Cursor cloud agent PR artifacts</td></tr>
             <tr><td>Phasing</td><td>Dependency order only — no week/timeline estimates</td></tr>
-            <tr><td>Integration testing</td><td>Minimal <strong>fixture repo</strong> inside EvalForge (<code>fixtures/sample-app/</code>) for env/build/test validation</td></tr>
+            <tr><td>Integration testing</td><td>Minimal <strong>fixture repo</strong> inside FinalStrike (<code>fixtures/sample-app/</code>) for env/build/test validation</td></tr>
             <tr><td>CLI framework</td><td><strong>Typer</strong></td></tr>
             <tr><td>First test parser</td><td><strong>pytest</strong> (extensible parser interface for xUnit, Jest, etc.)</td></tr>
         </table>
@@ -287,7 +287,7 @@
             <tr>
                 <td>ChatGPT Plus / Codex subscription</td>
                 <td><strong>Not supported directly</strong> — Plus is app-only, not a programmatic API</td>
-                <td>If a user runs an OpenAI-compatible gateway (e.g. LiteLLM) against their setup, plug it in via <code>base_url</code> in config — no EvalForge code change</td>
+                <td>If a user runs an OpenAI-compatible gateway (e.g. LiteLLM) against their setup, plug it in via <code>base_url</code> in config — no FinalStrike code change</td>
             </tr>
             <tr>
                 <td>Local models</td>
@@ -301,7 +301,7 @@
             </tr>
             <tr>
                 <td>Secrets vault (v1)</td>
-                <td>Plain <code>.evalforge/secrets.env</code> (gitignored)</td>
+                <td>Plain <code>.finalstrike/secrets.env</code> (gitignored)</td>
                 <td>Simple, matches most dev workflows; encryption deferred</td>
             </tr>
             <tr>
@@ -323,7 +323,7 @@
 
         <div class="callout info">
             <h4>Core philosophy</h4>
-            <p>EvalForge is an <strong>orchestrator + evidence recorder</strong>, not a test framework. It runs the same commands a Cursor cloud agent would run, uses an LLM to translate acceptance criteria into a verification plan, drives the UI like computer-use does, and packages proof. Repos keep their existing test stacks; EvalForge coordinates them.</p>
+            <p>FinalStrike is an <strong>orchestrator + evidence recorder</strong>, not a test framework. It runs the same commands a Cursor cloud agent would run, uses an LLM to translate acceptance criteria into a verification plan, drives the UI like computer-use does, and packages proof. Repos keep their existing test stacks; FinalStrike coordinates them.</p>
         </div>
     </div>
 
@@ -366,14 +366,14 @@
         <h3>2.2 Component responsibilities</h3>
         <div class="grid">
             <div class="card">
-                <h4>🎛️ Orchestrator (<code>evalforge run</code>)</h4>
+                <h4>🎛️ Orchestrator (<code>finalstrike run</code>)</h4>
                 <p>Top-level state machine. Sequences layers in order, aborts or continues based on policy, aggregates results into a single <code>RunResult</code>.</p>
                 <span class="tag blue">Python asyncio</span>
                 <span class="tag green">State machine</span>
             </div>
             <div class="card">
                 <h4>📋 Config Loader</h4>
-                <p>Reads <code>evalforge.yaml</code>, <code>AGENTS.md</code>, <code>.cursor/environment.json</code>. Merges secrets from vault. Validates schema.</p>
+                <p>Reads <code>finalstrike.yaml</code>, <code>AGENTS.md</code>, <code>.cursor/environment.json</code>. Merges secrets from vault. Validates schema.</p>
                 <span class="tag purple">Pydantic models</span>
             </div>
             <div class="card">
@@ -410,11 +410,11 @@
             </div>
         </div>
 
-        <h3>2.3 Repository layout (EvalForge project)</h3>
-        <pre><code>EvalForge/
-├── evalforge/
+        <h3>2.3 Repository layout (FinalStrike project)</h3>
+        <pre><code>FinalStrike/
+├── finalstrike/
 │   ├── cli/                 # Typer CLI entrypoints
-│   ├── config/              # Schema, loaders (evalforge.yaml, environment.json)
+│   ├── config/              # Schema, loaders (finalstrike.yaml, environment.json)
 │   ├── planner/             # LLM test planner + prompt templates
 │   ├── orchestrator/        # Run state machine
 │   ├── env/                 # Environment bootstrap (install, terminals, health)
@@ -433,7 +433,7 @@
 ├── fixtures/
 │   └── sample-app/          # Minimal API + frontend for integration tests
 ├── schemas/
-│   ├── evalforge.schema.json
+│   ├── finalstrike.schema.json
 │   └── verification_plan.schema.json
 ├── templates/
 │   └── report.html.j2
@@ -449,11 +449,11 @@
             <div class="num purple">3</div>
             <h2>Cursor Cloud Agent Parity Matrix</h2>
         </div>
-        <p>Maps Cursor cloud agent testing behavior to EvalForge features and implementation phase.</p>
+        <p>Maps Cursor cloud agent testing behavior to FinalStrike features and implementation phase.</p>
         <table>
             <tr>
                 <th>Cursor cloud agent behavior</th>
-                <th>EvalForge feature</th>
+                <th>FinalStrike feature</th>
                 <th>Phase</th>
                 <th>Parity</th>
             </tr>
@@ -533,8 +533,8 @@
             <h2>Configuration Contract</h2>
         </div>
 
-        <h3>4.1 <code>evalforge.yaml</code> (per target repo)</h3>
-        <pre><code><span class="cm"># evalforge.yaml — orchestration config committed to target repo</span>
+        <h3>4.1 <code>finalstrike.yaml</code> (per target repo)</h3>
+        <pre><code><span class="cm"># finalstrike.yaml — orchestration config committed to target repo</span>
 <span class="kw">version</span>: <span class="str">"1"</span>
 
 <span class="kw">project</span>:
@@ -575,12 +575,12 @@
   <span class="kw">smoke_route</span>: <span class="str">"/#/tasks"</span>   <span class="cm"># fallback; AGENTS.md may override</span>
 
 <span class="kw">secrets</span>:
-  <span class="kw">file</span>: <span class="str">.evalforge/secrets.env</span>  <span class="cm"># gitignored; injected into env</span>
+  <span class="kw">file</span>: <span class="str">.finalstrike/secrets.env</span>  <span class="cm"># gitignored; injected into env</span>
 
 <span class="kw">evidence</span>:
   <span class="kw">video</span>: <span class="kw">true</span>
   <span class="kw">screenshots</span>: <span class="kw">true</span>
-  <span class="kw">output_dir</span>: <span class="str">.evalforge/runs</span>
+  <span class="kw">output_dir</span>: <span class="str">.finalstrike/runs</span>
 
 <span class="kw">slack</span>:
   <span class="kw">bot_token_secret</span>: <span class="str">SLACK_BOT_TOKEN</span>
@@ -615,19 +615,19 @@
         <ul>
             <li><strong>Services</strong> — what runs on which port</li>
             <li><strong>Smoke routes</strong> — URL paths that bypass auth or reach key UI fast</li>
-            <li><strong>Test commands</strong> — canonical commands if not in evalforge.yaml</li>
+            <li><strong>Test commands</strong> — canonical commands if not in finalstrike.yaml</li>
             <li><strong>Known gaps</strong> — integrations that cannot be automated (live Azure DevOps, etc.)</li>
         </ul>
 
         <h3>4.3 <code>.cursor/environment.json</code> (reused as-is)</h3>
-        <p>EvalForge reads Cursor's existing format for <code>install</code>, <code>start</code>, and <code>terminals</code> to avoid duplicating service definitions. Parser contract is derived from <strong>Cursor documentation and public examples</strong> with loose parsing and a version-field check. If missing, fall back to <code>evalforge.yaml</code> <code>services</code> block (future extension). The fixture repo at <code>fixtures/sample-app/</code> includes a reference <code>environment.json</code> for tests.</p>
+        <p>FinalStrike reads Cursor's existing format for <code>install</code>, <code>start</code>, and <code>terminals</code> to avoid duplicating service definitions. Parser contract is derived from <strong>Cursor documentation and public examples</strong> with loose parsing and a version-field check. If missing, fall back to <code>finalstrike.yaml</code> <code>services</code> block (future extension). The fixture repo at <code>fixtures/sample-app/</code> includes a reference <code>environment.json</code> for tests.</p>
 
         <h3>4.4 Git branch semantics</h3>
-        <p><code>--branch</code> records the branch name in <code>RunResult</code> for report context only. EvalForge does <strong>not</strong> run <code>git checkout</code> on the target repo in v1 — the user ensures the working tree is on the intended branch before invoking <code>evalforge run</code>.</p>
+        <p><code>--branch</code> records the branch name in <code>RunResult</code> for report context only. FinalStrike does <strong>not</strong> run <code>git checkout</code> on the target repo in v1 — the user ensures the working tree is on the intended branch before invoking <code>finalstrike run</code>.</p>
 
         <h3>4.5 Acceptance criteria input (runtime)</h3>
         <pre><code><span class="cm"># Passed at run time — NOT committed by default</span>
-evalforge run \
+finalstrike run \
   --repo /path/to/target \
   --acceptance acceptance.md \
   --branch feature/my-change   <span class="cm"># metadata only; checkout manually first</span>
@@ -789,19 +789,19 @@ evalforge run \
             <h2>VM Deployment Model</h2>
         </div>
 
-        <p>EvalForge assumes SSH (or agent daemon) access to an existing self-hosted GUI VM. No Docker — desktop apps and computer-use require a real display session.</p>
+        <p>FinalStrike assumes SSH (or agent daemon) access to an existing self-hosted GUI VM. No Docker — desktop apps and computer-use require a real display session.</p>
 
         <h3>7.1 Deployment modes</h3>
         <table>
             <tr><th>Mode</th><th>Description</th><th>Phase</th></tr>
             <tr>
                 <td><strong>Local agent on VM</strong></td>
-                <td>EvalForge installed directly on the GUI VM. CLI runs in user desktop session. Simplest for v1.</td>
+                <td>FinalStrike installed directly on the GUI VM. CLI runs in user desktop session. Simplest for v1.</td>
                 <td>2+</td>
             </tr>
             <tr>
                 <td><strong>Remote trigger</strong></td>
-                <td>CLI on dev machine SSHes to VM, starts <code>evalforge-worker</code> daemon, streams results back.</td>
+                <td>CLI on dev machine SSHes to VM, starts <code>finalstrike-worker</code> daemon, streams results back.</td>
                 <td>9</td>
             </tr>
             <tr>
@@ -813,10 +813,10 @@ evalforge run \
 
         <h3>7.2 VM prerequisites checklist</h3>
         <ul class="checklist">
-            <li>GUI session active (X11 or Wayland) with logged-in user — EvalForge auto-detects session type and selects drivers</li>
+            <li>GUI session active (X11 or Wayland) with logged-in user — FinalStrike auto-detects session type and selects drivers</li>
             <li>Python 3.11+ and FFmpeg installed</li>
             <li>Target repo cloned at known path</li>
-            <li>Secrets file deployed to <code>.evalforge/secrets.env</code> (out of band)</li>
+            <li>Secrets file deployed to <code>.finalstrike/secrets.env</code> (out of band)</li>
             <li>Display resolution fixed (1920×1080 recommended for consistent screenshots)</li>
             <li>Network access to service ports (localhost services started by env orchestrator)</li>
         </ul>
@@ -855,14 +855,14 @@ evalforge run \
             <div class="phase-body">
                 <p class="deps">Dependencies: none</p>
                 <ul class="checklist">
-                    <li>Python package scaffold (<code>pyproject.toml</code>, <code>evalforge</code> module, Typer CLI stub)</li>
+                    <li>Python package scaffold (<code>pyproject.toml</code>, <code>finalstrike</code> module, Typer CLI stub)</li>
                     <li>Pydantic models for config, RunResult, VerificationPlan</li>
                     <li>JSON schemas exported to <code>schemas/</code></li>
-                    <li>Basic CLI: <code>evalforge --version</code>, <code>evalforge validate-config</code></li>
-                    <li>Sample <code>evalforge.yaml</code> in <code>fixtures/sample-app/</code></li>
+                    <li>Basic CLI: <code>finalstrike --version</code>, <code>finalstrike validate-config</code></li>
+                    <li>Sample <code>finalstrike.yaml</code> in <code>fixtures/sample-app/</code></li>
                     <li>README with architecture summary linking to this plan</li>
                 </ul>
-                <p><strong>Exit criteria:</strong> <code>evalforge validate-config --repo fixtures/sample-app</code> parses the sample <code>evalforge.yaml</code> without error.</p>
+                <p><strong>Exit criteria:</strong> <code>finalstrike validate-config --repo fixtures/sample-app</code> parses the sample <code>finalstrike.yaml</code> without error.</p>
             </div>
         </div>
 
@@ -874,13 +874,13 @@ evalforge run \
             <div class="phase-body">
                 <p class="deps">Dependencies: P0</p>
                 <ul class="checklist">
-                    <li><code>evalforge.yaml</code> loader with schema validation</li>
+                    <li><code>finalstrike.yaml</code> loader with schema validation</li>
                     <li><code>AGENTS.md</code> reader (raw text → planner context block)</li>
                     <li><code>.cursor/environment.json</code> parser</li>
-                    <li>Secrets vault loader (<code>.evalforge/secrets.env</code>, env var injection)</li>
+                    <li>Secrets vault loader (<code>.finalstrike/secrets.env</code>, env var injection)</li>
                     <li>Acceptance criteria markdown loader (CLI <code>--acceptance</code> file or <code>--acceptance-stdin</code>)</li>
                 </ul>
-                <p><strong>Exit criteria:</strong> <code>evalforge plan --repo X --acceptance ac.md --dry-run</code> prints merged config + AC text.</p>
+                <p><strong>Exit criteria:</strong> <code>finalstrike plan --repo X --acceptance ac.md --dry-run</code> prints merged config + AC text.</p>
             </div>
         </div>
 
@@ -898,7 +898,7 @@ evalforge run \
                     <li>Teardown: kill child processes on run end</li>
                     <li>Record env layer in RunResult with stdout/stderr logs</li>
                 </ul>
-                <p><strong>Exit criteria:</strong> On <code>fixtures/sample-app/</code>, <code>evalforge env up --repo fixtures/sample-app</code> starts services and reports healthy.</p>
+                <p><strong>Exit criteria:</strong> On <code>fixtures/sample-app/</code>, <code>finalstrike env up --repo fixtures/sample-app</code> starts services and reports healthy.</p>
             </div>
         </div>
 
@@ -911,12 +911,12 @@ evalforge run \
                 <p class="deps">Dependencies: P2</p>
                 <ul class="checklist">
                     <li>Generic command runner: subprocess, timeout, stdout/stderr capture, exit code</li>
-                    <li>Build/lint layer from evalforge.yaml <code>build.commands</code></li>
+                    <li>Build/lint layer from finalstrike.yaml <code>build.commands</code></li>
                     <li>Terminal test layer from <code>tests.commands</code></li>
                     <li>Parse test output for pass/fail counts (pytest parser first; xUnit, jest parsers extensible)</li>
                     <li>Retry policy for flaky tests (configurable)</li>
                 </ul>
-                <p><strong>Exit criteria:</strong> <code>evalforge run --repo X --acceptance ac.md --layers build,terminal</code> produces RunResult JSON with test counts.</p>
+                <p><strong>Exit criteria:</strong> <code>finalstrike run --repo X --acceptance ac.md --layers build,terminal</code> produces RunResult JSON with test counts.</p>
             </div>
         </div>
 
@@ -929,7 +929,7 @@ evalforge run \
                 <p class="deps">Dependencies: P2</p>
                 <ul class="checklist">
                     <li>HTTP client for GET/POST/PUT/DELETE with headers, body, auth from secrets</li>
-                    <li>Health checks from evalforge.yaml <code>api.health</code></li>
+                    <li>Health checks from finalstrike.yaml <code>api.health</code></li>
                     <li>LLM-planned API checks from VerificationPlan</li>
                     <li>Response assertions: status code, JSON path values, header presence</li>
                     <li>Record request/response in RunResult (redact secrets)</li>
@@ -947,9 +947,9 @@ evalforge run \
                 <p class="deps">Dependencies: P1</p>
                 <ul class="checklist">
                     <li><code>openai_compat</code> provider adapter (OpenAI Python SDK + configurable <code>base_url</code> / <code>api_key</code>)</li>
-                    <li>Prompt template: AC markdown + AGENTS.md + evalforge.yaml → VerificationPlan JSON</li>
+                    <li>Prompt template: AC markdown + AGENTS.md + finalstrike.yaml → VerificationPlan JSON</li>
                     <li>Schema validation of LLM output; retry on malformed JSON</li>
-                    <li><code>evalforge plan</code> command outputs plan without executing</li>
+                    <li><code>finalstrike plan</code> command outputs plan without executing</li>
                     <li>Gap analysis section in plan output</li>
                     <li>Document example configs for OpenAI API, Ollama (<code>localhost:11434/v1</code>), and gateway proxies</li>
                 </ul>
@@ -985,7 +985,7 @@ evalforge run \
                 <p class="deps">Dependencies: P3, P4, P6</p>
                 <ul class="checklist">
                     <li>Full-desktop FFmpeg video recording for entire run</li>
-                    <li>Artifact directory structure: <code>.evalforge/runs/&lt;run_id&gt;/</code></li>
+                    <li>Artifact directory structure: <code>.finalstrike/runs/&lt;run_id&gt;/</code></li>
                     <li>Sync video timestamps to UI step markers</li>
                     <li>Gap analyzer: merge planner gaps + runtime failures + policy exclusions</li>
                     <li>RunResult JSON as canonical machine output</li>
@@ -1024,7 +1024,7 @@ evalforge run \
                     <li>Summary message with pass/fail/partial status</li>
                     <li>Upload screenshots and video via <code>files.upload</code> (or v2 API equivalent)</li>
                     <li>Link to HTML report if hosted; else attach key screenshots inline</li>
-                    <li>Configurable channel per evalforge.yaml</li>
+                    <li>Configurable channel per finalstrike.yaml</li>
                 </ul>
                 <p><strong>Exit criteria:</strong> Run completion posts to Slack with video + screenshot attachments.</p>
             </div>
@@ -1038,7 +1038,7 @@ evalforge run \
             <div class="phase-body">
                 <p class="deps">Dependencies: P2–P9</p>
                 <ul class="checklist">
-                    <li><code>evalforge run</code> executes full layer sequence: env → build → terminal → api → ui</li>
+                    <li><code>finalstrike run</code> executes full layer sequence: env → build → terminal → api → ui</li>
                     <li>Policy: <code>fail_fast</code> vs collect-all-evidence modes</li>
                     <li>CLI flags: <code>--layers</code>, <code>--skip-env</code>, <code>--plan-only</code>, <code>--no-slack</code></li>
                     <li><code>--branch</code> records metadata only; no automatic git checkout</li>
@@ -1089,23 +1089,23 @@ evalforge run \
         </div>
 
         <pre><code><span class="cm"># Validate repo config</span>
-evalforge validate-config --repo /path/to/target
+finalstrike validate-config --repo /path/to/target
 
 <span class="cm"># Generate verification plan from acceptance criteria (no execution)</span>
-evalforge plan --repo /path/to/target --acceptance acceptance.md
+finalstrike plan --repo /path/to/target --acceptance acceptance.md
 
 <span class="cm"># Run specific layers</span>
-evalforge run --repo /path/to/target --acceptance acceptance.md --layers env,build,terminal
+finalstrike run --repo /path/to/target --acceptance acceptance.md --layers env,build,terminal
 
 <span class="cm"># Full verification run</span>
-evalforge run --repo /path/to/target --acceptance acceptance.md --branch feature/x  <span class="cm"># branch = metadata only</span>
+finalstrike run --repo /path/to/target --acceptance acceptance.md --branch feature/x  <span class="cm"># branch = metadata only</span>
 
 <span class="cm"># Environment management only</span>
-evalforge env up --repo /path/to/target
-evalforge env down --repo /path/to/target
+finalstrike env up --repo /path/to/target
+finalstrike env down --repo /path/to/target
 
 <span class="cm"># Accept AC from stdin (e.g. pasted PR body)</span>
-gh pr view 123 --json body -q .body | evalforge run --repo . --acceptance-stdin</code></pre>
+gh pr view 123 --json body -q .body | finalstrike run --repo . --acceptance-stdin</code></pre>
     </div>
 
     <!-- 10. SLACK -->
@@ -1133,7 +1133,7 @@ gh pr view 123 --json body -q .body | evalforge run --repo . --acceptance-stdin<
         <ul>
             <li>Slack app with <code>files:write</code>, <code>chat:write</code> scopes</li>
             <li>Bot token stored in secrets vault</li>
-            <li>Channel ID in evalforge.yaml</li>
+            <li>Channel ID in finalstrike.yaml</li>
         </ul>
     </div>
 
@@ -1148,7 +1148,7 @@ gh pr view 123 --json body -q .body | evalforge run --repo . --acceptance-stdin<
             <tr>
                 <td>LLM derives incorrect test steps from AC</td>
                 <td>False pass or wrong coverage</td>
-                <td><code>evalforge plan</code> dry-run review; schema constraints; require terminal commands from evalforge.yaml for critical suites</td>
+                <td><code>finalstrike plan</code> dry-run review; schema constraints; require terminal commands from finalstrike.yaml for critical suites</td>
             </tr>
             <tr>
                 <td>Computer-use flakiness (timing, resolution)</td>
@@ -1178,7 +1178,7 @@ gh pr view 123 --json body -q .body | evalforge run --repo . --acceptance-stdin<
             <tr>
                 <td>environment.json format changes</td>
                 <td>Parser breaks</td>
-                <td>Version field check; loose parsing; fallback to evalforge.yaml services</td>
+                <td>Version field check; loose parsing; fallback to finalstrike.yaml services</td>
             </tr>
         </table>
     </div>
@@ -1204,7 +1204,7 @@ gh pr view 123 --json body -q .body | evalforge run --repo . --acceptance-stdin<
 </div>
 
 <footer>
-    <p>EvalForge — Cursor Cloud Agent Testing Mirror — Implementation Plan</p>
+    <p>FinalStrike — Cursor Cloud Agent Testing Mirror — Implementation Plan</p>
     <p>Requirements session — June 20, 2026 · Pre-implementation decisions codified — June 20, 2026</p>
 </footer>
 

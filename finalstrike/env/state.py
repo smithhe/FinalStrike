@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ENV_STATE_REL_PATH = Path(".evalforge") / "env-state.json"
+ENV_STATE_REL_PATH = Path(".finalstrike") / "env-state.json"
 
 
 class ManagedProcess(BaseModel):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from evalforge.config.export_schemas import export_schemas
+from finalstrike.config.export_schemas import export_schemas
 
 SCHEMAS_DIR = Path(__file__).resolve().parents[1] / "schemas"
 

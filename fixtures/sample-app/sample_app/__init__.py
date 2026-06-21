@@ -1,1 +1,1 @@
-"""Minimal sample application package for EvalForge fixture testing."""
+"""Minimal sample application package for FinalStrike fixture testing."""

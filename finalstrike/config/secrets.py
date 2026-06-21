@@ -1,4 +1,4 @@
-"""Load secrets vault from .evalforge/secrets.env."""
+"""Load secrets vault from .finalstrike/secrets.env."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def parse_secrets_content(content: str) -> dict[str, str]:
 
 
 def load_secrets(repo: Path, secrets_file: str) -> tuple[dict[str, str], list[str]]:
-    """Load secrets from the path configured in evalforge.yaml (relative to repo)."""
+    """Load secrets from the path configured in finalstrike.yaml (relative to repo)."""
     repo = repo.resolve()
     secrets_path = repo / secrets_file
     if not secrets_path.is_file():

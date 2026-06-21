@@ -8,12 +8,12 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from evalforge.config.acceptance import AcceptanceCriteria, load_acceptance
-from evalforge.config.agents import AgentsContext, load_agents
-from evalforge.config.environment import EnvironmentConfig, load_environment
-from evalforge.config.loader import load_config
-from evalforge.config.models import EvalForgeConfig
-from evalforge.config.secrets import apply_to_environ, load_secrets, redact_secrets
+from finalstrike.config.acceptance import AcceptanceCriteria, load_acceptance
+from finalstrike.config.agents import AgentsContext, load_agents
+from finalstrike.config.environment import EnvironmentConfig, load_environment
+from finalstrike.config.loader import load_config
+from finalstrike.config.models import FinalStrikeConfig
+from finalstrike.config.secrets import apply_to_environ, load_secrets, redact_secrets
 
 
 class RepoContext(BaseModel):
@@ -22,7 +22,7 @@ class RepoContext(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     repo: Path
-    config: EvalForgeConfig
+    config: FinalStrikeConfig
     agents: AgentsContext
     environment: EnvironmentConfig
     secrets: dict[str, str]
@@ -56,11 +56,11 @@ class RepoContext(BaseModel):
         """Format merged context for plan --dry-run output."""
         sections: list[str] = []
 
-        sections.append("# EvalForge Plan Context (dry-run)\n")
+        sections.append("# FinalStrike Plan Context (dry-run)\n")
         sections.append(f"**Repo:** `{self.repo}`\n")
 
         config_dict = self.config.model_dump(mode="json")
-        sections.append("## evalforge.yaml\n")
+        sections.append("## finalstrike.yaml\n")
         sections.append("```yaml")
         sections.append(yaml.safe_dump(config_dict, sort_keys=False).rstrip())
         sections.append("```\n")
@@ -124,11 +124,11 @@ def load_repo_context(
     acceptance: AcceptanceCriteria | None = None
     if acceptance_stdin:
         if acceptance_content is None:
-            from evalforge.config.acceptance import load_acceptance_from_stdin
+            from finalstrike.config.acceptance import load_acceptance_from_stdin
 
             acceptance = load_acceptance_from_stdin()
         else:
-            from evalforge.config.acceptance import _validate_acceptance_content
+            from finalstrike.config.acceptance import _validate_acceptance_content
 
             acceptance = _validate_acceptance_content(acceptance_content, "stdin")
     elif acceptance_path is not None:
