@@ -17,7 +17,12 @@ from finalstrike.fixture_capabilities import (
     default_capabilities_path,
     load_capabilities,
 )
-from finalstrike.phase_status import STUB_MODULES, STUB_TEMPLATES, next_unimplemented_phases
+from finalstrike.phase_status import (
+    IMPLEMENTED_PHASES,
+    STUB_MODULES,
+    STUB_TEMPLATES,
+    next_unimplemented_phases,
+)
 
 
 class CheckStatus(str, Enum):
@@ -63,7 +68,7 @@ def run_doctor_checks(
         DoctorCheck(
             name="Implemented phases",
             status=CheckStatus.OK,
-            detail=f"P0–P3 complete; next: P{next_unimplemented_phases()[0]}",
+            detail=f"P0–P{max(IMPLEMENTED_PHASES)} complete; next: P{next_unimplemented_phases()[0]}",
         )
     )
 
@@ -72,8 +77,8 @@ def run_doctor_checks(
         DoctorCheck(
             name="Stub modules",
             status=CheckStatus.WARN,
-            detail=f"{stub_count} scaffolded paths awaiting P4–P10",
-            phase=4,
+            detail=f"{stub_count} scaffolded paths awaiting P{next_unimplemented_phases()[0]}–P10",
+            phase=next_unimplemented_phases()[0],
         )
     )
 

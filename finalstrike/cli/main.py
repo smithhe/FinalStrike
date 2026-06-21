@@ -15,6 +15,8 @@ from finalstrike.config.context import load_repo_context
 from finalstrike.config.plan import load_verification_plan
 from finalstrike.config.loader import format_validation_error, load_config
 from finalstrike.config.models import LayerStatus
+from finalstrike.planner import generate_verification_plan
+from finalstrike.providers.openai_compat import LLMProviderError
 from finalstrike.env.orchestrator import EnvOrchestrator
 from finalstrike.doctor import CheckStatus, doctor_exit_code, run_doctor_checks
 from finalstrike.orchestrator.run import execute_run, format_run_result_json, parse_layers
@@ -184,7 +186,7 @@ def plan(
         ),
     ] = True,
 ) -> None:
-    """Load repo context and acceptance criteria; print merged plan context."""
+    """Load repo context and acceptance criteria; print plan context or VerificationPlan JSON."""
     if not repo.exists():
         console.print(f"[red]Error:[/red] Repo path does not exist: {repo}")
         raise typer.Exit(code=1)
@@ -227,11 +229,21 @@ def plan(
         typer.echo(context.format_dry_run())
         return
 
-    console.print(
-        "[yellow]Note:[/yellow] LLM planner is not implemented yet; "
-        "showing merged context."
-    )
-    typer.echo(context.format_dry_run())
+    try:
+        plan = generate_verification_plan(context)
+    except LLMProviderError as exc:
+        console.print(f"[red]LLM error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except ValueError as exc:
+        console.print(f"[red]Planner error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(plan.model_dump_json(indent=2))
+    if plan.gaps:
+        console.print(
+            f"\n[yellow]Gap analysis:[/yellow] {len(plan.gaps)} item(s) "
+            "flagged by planner (see gaps in JSON output)."
+        )
 
 
 def _load_context_or_exit(

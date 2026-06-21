@@ -366,7 +366,19 @@ def test_plan_missing_acceptance_file(tmp_path: Path) -> None:
     assert "not found" in result.stderr.lower()
 
 
-def test_plan_no_dry_run_still_prints_context() -> None:
+def test_plan_no_dry_run_invokes_planner(monkeypatch: pytest.MonkeyPatch) -> None:
+    from finalstrike.config.models import VerificationPlan
+
+    def _fake_generate(context, **kwargs):
+        del context, kwargs
+        return VerificationPlan.model_validate(
+            {"scenarios": [], "gaps": [{"item": "x", "reason": "y"}]}
+        )
+
+    monkeypatch.setattr(
+        "finalstrike.cli.main.generate_verification_plan",
+        _fake_generate,
+    )
     result = runner.invoke(
         app,
         [
@@ -379,8 +391,8 @@ def test_plan_no_dry_run_still_prints_context() -> None:
         ],
     )
     assert result.exit_code == 0
-    assert "LLM planner is not implemented" in result.stderr
-    assert "sample-app" in result.stdout
+    assert '"scenarios"' in result.stdout
+    assert "Gap analysis" in result.stderr
 
 
 # --- helpers ---

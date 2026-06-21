@@ -1,1 +1,1 @@
-"""Computer-use screenshot, a11y, input, and action loop (Phase 5–6)."""
+"""Computer-use screenshot, a11y, input, and action loop (Phase 6)."""

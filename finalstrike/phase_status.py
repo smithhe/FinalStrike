@@ -15,11 +15,9 @@ class PhaseModule:
     summary: str
 
 
-IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4})
+IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5})
 
 STUB_MODULES: tuple[PhaseModule, ...] = (
-    PhaseModule("finalstrike/planner/", 5, "LLM test planner"),
-    PhaseModule("finalstrike/providers/openai_compat.py", 5, "OpenAI-compatible adapter"),
     PhaseModule("finalstrike/computer_use/", 6, "Computer-use action loop"),
     PhaseModule("finalstrike/computer_use/platform/", 6, "Linux platform drivers"),
     PhaseModule("finalstrike/evidence/", 7, "Evidence recorder and gap analyzer"),
