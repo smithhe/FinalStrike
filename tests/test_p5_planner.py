@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -255,17 +256,32 @@ def test_plan_cli_no_dry_run_planner_error(monkeypatch: pytest.MonkeyPatch) -> N
     assert "Planner error" in result.stderr
 
 
-def test_openai_compat_provider_from_context() -> None:
-    context = load_repo_context(
-        FIXTURE_REPO,
-        acceptance_path=ACCEPTANCE_FILE,
-        inject_secrets=False,
+def test_openai_compat_provider_from_context(tmp_path: Path) -> None:
+    (tmp_path / "finalstrike.yaml").write_text(
+        """
+version: "1"
+project:
+  name: provider-test
+llm:
+  provider: openai_compat
+  base_url: http://localhost:11434/v1
+  model: unit-test-model
+secrets:
+  file: .finalstrike/secrets.env
+""".strip()
+        + "\n",
+        encoding="utf-8",
     )
+    secrets_dir = tmp_path / ".finalstrike"
+    secrets_dir.mkdir()
+    (secrets_dir / "secrets.env").write_text("OPENAI_API_KEY=test-key\n", encoding="utf-8")
+
+    context = load_repo_context(tmp_path, inject_secrets=False)
     provider = OpenAICompatProvider.from_context(
         context.config.llm,
         context.secrets,
     )
-    assert provider.config.model == "llama3"
+    assert provider.config.model == context.config.llm.model == "unit-test-model"
 
 
 @pytest.mark.requires_live_llm

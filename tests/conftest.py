@@ -11,6 +11,8 @@ from finalstrike.providers.live import assess_live_llm
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_REPO = WORKSPACE_ROOT / "fixtures" / "sample-app"
+# Committed config snapshot for deterministic tests (no gitignored local.yaml).
+CASSETTE_SMOKE_REPO = WORKSPACE_ROOT / "tests" / "fixtures" / "cassette-smoke-v1"
 ACCEPTANCE_SMOKE = FIXTURE_REPO / "acceptance-smoke.md"
 ACCEPTANCE_FULL = FIXTURE_REPO / "acceptance-full.md"
 # Default acceptance file for P0–P4 integration tests.

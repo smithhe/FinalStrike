@@ -14,6 +14,7 @@ from finalstrike.config.overrides import (
 )
 from finalstrike.config.context import load_repo_context
 from tests.conftest import FIXTURE_REPO
+from tests.support.cassette_repo import CASSETTE_SMOKE_REPO
 
 
 def test_deep_merge_dict_nested() -> None:
@@ -93,11 +94,13 @@ llm:
     assert config.llm.model == "from-secrets"
 
 
-def test_fixture_repo_committed_yaml_unchanged_by_local_file_absence() -> None:
-    raw = load_raw_config(FIXTURE_REPO)
-    merged, local_path = merge_repo_config(FIXTURE_REPO, raw)
+def test_committed_snapshot_repo_has_no_local_yaml_overlay() -> None:
+    """Deterministic config lives under tests/fixtures/, not the mutable sample-app."""
+    raw = load_raw_config(CASSETTE_SMOKE_REPO)
+    merged, local_path = merge_repo_config(CASSETTE_SMOKE_REPO, raw)
     assert local_path is None
     assert merged["llm"]["base_url"] == "http://localhost:11434/v1"
+    assert merged == raw
 
 
 def test_load_repo_context_applies_local_yaml(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:

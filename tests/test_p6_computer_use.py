@@ -88,8 +88,21 @@ def test_action_summary_labels() -> None:
     assert action_summary(ActionPayload(type="done", success=True)) == "done(success=True)"
 
 
-def test_resolve_computer_use_llm_falls_back_to_planner() -> None:
-    config = load_config(FIXTURE_REPO)
+def test_resolve_computer_use_llm_falls_back_to_planner(tmp_path: Path) -> None:
+    (tmp_path / "finalstrike.yaml").write_text(
+        """
+version: "1"
+project:
+  name: computer-use-config
+llm:
+  provider: openai_compat
+  base_url: http://localhost:11434/v1
+  model: unit-test-model
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    config = load_config(tmp_path)
     assert resolve_computer_use_llm(config) is config.llm
 
 

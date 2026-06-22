@@ -13,7 +13,9 @@ FIXTURE_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "sample-app"
 
 
 def test_load_sample_app_config() -> None:
-    config = load_config(FIXTURE_REPO)
+    from tests.support.cassette_repo import CASSETTE_SMOKE_REPO
+
+    config = load_config(CASSETTE_SMOKE_REPO)
     assert config.project.name == "sample-app"
     assert config.llm.provider.value == "openai_compat"
     assert config.api is not None
