@@ -110,28 +110,49 @@ class OpenAICompatProvider:
         temperature: float,
         json_mode: bool,
     ) -> str:
-        kwargs: dict[str, object] = {
-            "model": self.config.model,
-            "messages": payload_messages,
-            "temperature": temperature,
-        }
-        if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
+        use_json_mode = json_mode
+        send_temperature = True
+        last_exc: APIStatusError | None = None
+        attempted: set[tuple[bool, bool]] = set()
 
-        try:
-            response = self._create_completion(kwargs)
-        except APIStatusError as exc:
-            if json_mode and _json_mode_unsupported(exc):
-                kwargs.pop("response_format", None)
+        while True:
+            config_key = (use_json_mode, send_temperature)
+            if config_key in attempted:
+                break
+            attempted.add(config_key)
+
+            kwargs: dict[str, object] = {
+                "model": self.config.model,
+                "messages": payload_messages,
+            }
+            if send_temperature:
+                kwargs["temperature"] = temperature
+            if use_json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+
+            try:
                 response = self._create_completion(kwargs)
-            else:
+                break
+            except APIStatusError as exc:
+                last_exc = exc
+                if send_temperature and _temperature_unsupported(exc):
+                    send_temperature = False
+                    continue
+                if use_json_mode and _json_mode_unsupported(exc):
+                    use_json_mode = False
+                    continue
                 raise LLMProviderError(
                     f"LLM request failed ({exc.status_code}): {exc.message}"
                 ) from exc
-        except APIConnectionError as exc:
+            except APIConnectionError as exc:
+                raise LLMProviderError(
+                    f"Cannot reach LLM at {self.config.base_url}: {exc}"
+                ) from exc
+        else:
+            assert last_exc is not None
             raise LLMProviderError(
-                f"Cannot reach LLM at {self.config.base_url}: {exc}"
-            ) from exc
+                f"LLM request failed ({last_exc.status_code}): {last_exc.message}"
+            ) from last_exc
 
         content = response.choices[0].message.content
         if not content:
@@ -143,9 +164,16 @@ class OpenAICompatProvider:
 
 
 def _json_mode_unsupported(exc: APIStatusError) -> bool:
+    if _temperature_unsupported(exc):
+        return False
     message = (exc.message or "").lower()
     return exc.status_code in {400, 404, 422} and (
         "response_format" in message
         or "json" in message
         or "unsupported" in message
     )
+
+
+def _temperature_unsupported(exc: APIStatusError) -> bool:
+    message = (exc.message or "").lower()
+    return exc.status_code in {400, 422} and "temperature" in message

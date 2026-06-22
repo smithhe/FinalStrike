@@ -268,6 +268,9 @@ stderr) for the root cause. Common failures:
 - **Invalid action JSON** — the vision model returned text the parser could not
   use; retry with a model that supports `response_format: json_object` or check
   stderr for the validation message.
+- **Reasoning models (o-series, etc.)** — some models reject custom `temperature`
+  and only accept the provider default; FinalStrike omits `temperature` automatically
+  when the API reports it is unsupported.
 - **Platform tools** — missing Chrome/Chromium, `DISPLAY`, or `xdotool`.
 
 Also inspect the last screenshots under `screenshots/` for visual context.
