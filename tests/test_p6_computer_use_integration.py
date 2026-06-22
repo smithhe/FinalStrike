@@ -10,9 +10,9 @@ from threading import Thread
 import pytest
 
 from finalstrike.computer_use.loop import ActionLoop, ReplayActionProvider
-from finalstrike.config.context import load_repo_context
 from finalstrike.config.models import LayerStatus
 from tests.conftest import FIXTURE_REPO
+from tests.support.cassette_repo import load_cassette_smoke_context
 from tests.support.action_cassette import (
     DEFAULT_SMOKE_TITLE_CASSETTE_ID,
     assert_action_cassette_current,
@@ -63,7 +63,7 @@ def test_smoke_title_scenario_with_action_cassette(
         for raw in cassette.responses
     ]
 
-    context = load_repo_context(FIXTURE_REPO, inject_secrets=False)
+    context = load_cassette_smoke_context(inject_secrets=False)
     assert context.config.ui is not None
 
     instruction = (

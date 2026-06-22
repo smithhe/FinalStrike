@@ -18,6 +18,13 @@ ACCEPTANCE_FULL = FIXTURE_REPO / "acceptance-full.md"
 # Default acceptance file for P0–P4 integration tests.
 ACCEPTANCE_FILE = ACCEPTANCE_SMOKE
 
+# Repo usage for tests (see tests/README.md):
+# - FIXTURE_REPO: integration target; may have gitignored finalstrike.local.yaml
+#   and real secrets. Do not assert committed LLM model/base_url or absence of
+#   local overlays. OK for CLI wiring, env/agents/secrets shape, live LLM markers.
+# - CASSETTE_SMOKE_REPO: frozen committed snapshot for deterministic assertions.
+# - tmp_path: when you control the full config in the test.
+
 
 def live_llm_available(repo: Path | None = None) -> bool:
     target = repo or FIXTURE_REPO

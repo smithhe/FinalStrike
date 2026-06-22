@@ -22,7 +22,14 @@ from finalstrike.config.secrets import (
     redact_secrets,
 )
 
-from tests.conftest import ACCEPTANCE_FILE, ACCEPTANCE_FULL, ACCEPTANCE_SMOKE, FIXTURE_REPO
+from tests.conftest import (
+    ACCEPTANCE_FILE,
+    ACCEPTANCE_FULL,
+    ACCEPTANCE_SMOKE,
+    CASSETTE_SMOKE_REPO,
+    FIXTURE_REPO,
+)
+from tests.support.cassette_repo import CASSETTE_ACCEPTANCE_SMOKE
 runner = CliRunner()
 
 
@@ -275,7 +282,10 @@ def test_planner_context_block_uses_agents_context_block() -> None:
 
 
 def test_repo_context_redacts_secrets_in_dry_run() -> None:
-    ctx = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FILE)
+    ctx = load_repo_context(
+        CASSETTE_SMOKE_REPO,
+        acceptance_path=CASSETTE_ACCEPTANCE_SMOKE,
+    )
     output = ctx.format_dry_run()
     assert "fixture-test-key-not-real" not in output
     assert "fixture-slack-token" not in output
@@ -298,15 +308,15 @@ def test_load_environment_invalid_json(tmp_path: Path) -> None:
 # --- CLI plan ---
 
 
-def test_plan_dry_run_sample_app() -> None:
+def test_plan_dry_run_cassette_repo() -> None:
     result = runner.invoke(
         app,
         [
             "plan",
             "--repo",
-            str(FIXTURE_REPO),
+            str(CASSETTE_SMOKE_REPO),
             "--acceptance",
-            str(ACCEPTANCE_FILE),
+            str(CASSETTE_ACCEPTANCE_SMOKE),
             "--dry-run",
         ],
     )

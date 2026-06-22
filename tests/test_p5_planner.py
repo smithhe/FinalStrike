@@ -24,6 +24,10 @@ from finalstrike.providers.openai_compat import (
     resolve_api_key,
 )
 from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO, live_llm_available
+from tests.support.cassette_repo import (
+    CASSETTE_SMOKE_REPO,
+    load_cassette_smoke_context,
+)
 
 runner = CliRunner()
 
@@ -139,11 +143,7 @@ def test_validate_plan_payload_rejects_invalid() -> None:
 
 
 def test_build_planner_messages_includes_context() -> None:
-    context = load_repo_context(
-        FIXTURE_REPO,
-        acceptance_path=ACCEPTANCE_FILE,
-        inject_secrets=False,
-    )
+    context = load_cassette_smoke_context(inject_secrets=False)
     messages = build_planner_messages(context)
     assert messages[0][0] == "system"
     assert SYSTEM_PROMPT in messages[0][1]
@@ -154,21 +154,13 @@ def test_build_planner_messages_includes_context() -> None:
 
 
 def test_build_planner_messages_includes_validation_error() -> None:
-    context = load_repo_context(
-        FIXTURE_REPO,
-        acceptance_path=ACCEPTANCE_FILE,
-        inject_secrets=False,
-    )
+    context = load_cassette_smoke_context(inject_secrets=False)
     messages = build_planner_messages(context, validation_error="missing scenarios")
     assert "missing scenarios" in messages[1][1]
 
 
 def test_generate_verification_plan_success() -> None:
-    context = load_repo_context(
-        FIXTURE_REPO,
-        acceptance_path=ACCEPTANCE_FILE,
-        inject_secrets=False,
-    )
+    context = load_cassette_smoke_context(inject_secrets=False)
     fake = FakeLLM([json.dumps(SMOKE_PLAN_JSON)])
     plan = generate_verification_plan(context, provider=fake)
     assert isinstance(plan, VerificationPlan)
@@ -184,11 +176,7 @@ def test_generate_verification_plan_success() -> None:
 
 
 def test_generate_verification_plan_retries_on_invalid_json() -> None:
-    context = load_repo_context(
-        FIXTURE_REPO,
-        acceptance_path=ACCEPTANCE_FILE,
-        inject_secrets=False,
-    )
+    context = load_cassette_smoke_context(inject_secrets=False)
     fake = FakeLLM(
         [
             "not json",
@@ -201,7 +189,7 @@ def test_generate_verification_plan_retries_on_invalid_json() -> None:
 
 
 def test_generate_verification_plan_requires_acceptance() -> None:
-    context = load_repo_context(FIXTURE_REPO, inject_secrets=False)
+    context = load_repo_context(CASSETTE_SMOKE_REPO, inject_secrets=False)
     with pytest.raises(ValueError, match="Acceptance criteria"):
         generate_verification_plan(context, provider=FakeLLM([]))
 

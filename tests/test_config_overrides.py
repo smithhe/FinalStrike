@@ -13,7 +13,6 @@ from finalstrike.config.overrides import (
     merge_repo_config,
 )
 from finalstrike.config.context import load_repo_context
-from tests.conftest import FIXTURE_REPO
 from tests.support.cassette_repo import CASSETTE_SMOKE_REPO
 
 
@@ -57,7 +56,7 @@ llm:
 
 
 def test_runtime_overrides_from_secrets_dict() -> None:
-    raw = load_raw_config(FIXTURE_REPO)
+    raw = load_raw_config(CASSETTE_SMOKE_REPO)
     merged = apply_runtime_overlays(
         raw,
         secrets={
