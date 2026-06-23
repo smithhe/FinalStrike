@@ -22,7 +22,7 @@ implemented vs planned.
 - Lint: no linter is configured (dev deps are pytest only); there is nothing to run.
 - Build/run the app: it is a CLI, not a server. Core commands: `finalstrike --version`, `finalstrike doctor --repo fixtures/sample-app`, `finalstrike validate-config --repo fixtures/sample-app`, `finalstrike plan --repo fixtures/sample-app --acceptance fixtures/sample-app/acceptance-smoke.md --dry-run`, `finalstrike plan ... --no-dry-run` (live LLM planner), and `finalstrike run --repo fixtures/sample-app --acceptance fixtures/sample-app/acceptance-smoke.md --layers api` (with services up). See `README.md` Quick start.
 - Regenerate JSON schemas: `python -m finalstrike.config.export_schemas` (writes to `schemas/`; output is committed and currently up to date).
-- The `fixtures/sample-app` server (integration target) runs via `python -m sample_app.server 8080` from inside `fixtures/sample-app/` and serves `GET /health` -> `200 ok`.
+- The `fixtures/sample-app` server (integration target) runs via `python -m sample_app.server 8080` from inside `fixtures/sample-app/` and serves `GET /health` -> `200 ok`, `GET/POST /api/tasks` (in-memory task store). The static frontend on port 3000 includes `/tasks.html` (title "Sample App — Tasks") for Tier 1 computer-use demos.
 
 ### Live LLM testing
 

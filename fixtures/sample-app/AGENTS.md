@@ -6,13 +6,15 @@ Minimal API + static frontend used for FinalStrike integration testing.
 
 | Service  | Port | Notes                    |
 |----------|------|--------------------------|
-| API      | 8080 | `GET /health` returns 200 |
-| Frontend | 3000 | Static HTML smoke page   |
+| API      | 8080 | `GET /health`, `GET/POST /api/tasks` |
+| Frontend | 3000 | Static HTML pages (`/`, `/tasks.html`) |
 
 ## Smoke routes
 
 - UI: `http://localhost:3000/` — landing page with title "Sample App"
+- UI: `http://localhost:3000/tasks.html` — task list page with title "Sample App — Tasks"
 - API: `http://localhost:8080/health`
+- API: `http://localhost:8080/api/tasks` — list tasks (`GET`) or create (`POST` JSON `{title, description?}`)
 
 ## Computer-use (P6)
 
@@ -63,4 +65,4 @@ finalstrike doctor --repo .   # shows Local config overlay when present
 
 - No authentication (intentional for fixture simplicity)
 - No live third-party API integrations
-- Task-list feature from `acceptance-full.md` is **planned** — see `capabilities.yaml`
+- Tier 2 task actions (complete, delete) from `acceptance-full.md` are **planned** — see `capabilities.yaml`

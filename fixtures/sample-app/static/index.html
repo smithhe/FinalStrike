@@ -2,10 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sample App</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #111111;
+      --border: #333333;
+      --accent: #0047ab;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #ffffff;
+      color: var(--text);
+      margin: 0;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    nav {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.125rem;
+    }
+    nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      margin-right: 1rem;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+  </style>
 </head>
 <body>
+  <nav aria-label="Main navigation">
+    <a href="/" aria-current="page">Home</a>
+    <a href="/tasks.html">Tasks</a>
+  </nav>
+
   <h1>Sample App</h1>
   <p>FinalStrike fixture frontend placeholder.</p>
+  <p><a href="/tasks.html">Go to Tasks</a></p>
 </body>
 </html>

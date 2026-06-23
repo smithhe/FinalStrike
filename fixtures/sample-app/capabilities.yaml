@@ -9,19 +9,25 @@ implemented:
     - method: GET
       path: /health
       expect_status: 200
+    - method: POST
+      path: /api/tasks
+      expect_status: 201
   ui:
     - route: /
       title: Sample App
+    - route: /tasks
+    - action: create_task
+      description: Fill title and description, save, see task in list
   terminal:
     - command: pytest -q
 
 planned:
   api:
-    - method: POST
-      path: /api/tasks
-      expect_status: 201
+    - method: PATCH
+      path: /api/tasks/{id}
+      expect_status: 200
   ui:
-    - route: /tasks
-      description: Tasks page with list and New Task form
-    - action: create_task
-      description: Fill title and description, save, see task in list
+    - action: complete_task
+      description: Toggle task complete status on the Tasks page
+    - action: delete_task
+      description: Delete task with confirmation modal

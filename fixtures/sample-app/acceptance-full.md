@@ -1,6 +1,4 @@
-> **Fixture status:** Planned — not implemented in sample-app yet.
-> Tracked in `capabilities.yaml` under `planned`. Implement the fixture before
-> P6 end-to-end planner/UI demos. Use `acceptance-smoke.md` for P0–P4 work today.
+> **Fixture status:** Implemented — Tier 1 task list and create flow.
 
 ## Feature: Task list
 
