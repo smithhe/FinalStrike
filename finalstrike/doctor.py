@@ -349,6 +349,18 @@ def _optional_phase_checks(repo: Path | None = None) -> list[DoctorCheck]:
                 phase=6,
             )
         )
+    else:
+        checks.append(
+            DoctorCheck(
+                name="Display session (P6)",
+                status=CheckStatus.WARN,
+                detail=(
+                    "Display session type unknown — ensure X11 or Wayland with "
+                    "xdotool/ydotool for computer-use input"
+                ),
+                phase=6,
+            )
+        )
 
     for binary, phase, label in (
         ("ffmpeg", 7, "FFmpeg desktop recording"),

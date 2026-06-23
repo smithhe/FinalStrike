@@ -144,3 +144,38 @@ def test_relaunch_terminates_previous_browser(tmp_path: Path) -> None:
     assert len(processes) == 2
     assert processes[0].terminated is True
     assert processes[1].terminated is True
+
+
+def test_cleanup_oserror_does_not_mask_successful_result(tmp_path: Path) -> None:
+    responses = [
+        json.dumps(
+            {
+                "thought": "done",
+                "action": {"type": "done", "success": True, "message": "ok"},
+            }
+        ),
+    ]
+
+    import finalstrike.computer_use.loop as loop_module
+
+    class _RaisingTerminateProcess(_FakeBrowserProcess):
+        def terminate(self) -> None:
+            raise OSError("permission denied")
+
+    loop = ActionLoop(
+        instruction="verify",
+        output_dir=tmp_path,
+        provider=ReplayActionProvider(responses),
+        browser=BrowserKind.CHROMIUM,
+        max_steps=1,
+        max_action_retries=0,
+        max_parse_retries=0,
+        screenshot_driver=_FakeScreenshotDriver(),
+        input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
+    )
+    loop._browser_process = _RaisingTerminateProcess()
+
+    result = loop.run()
+    assert result.status == LayerStatus.PASSED
+    assert loop._browser_process is None

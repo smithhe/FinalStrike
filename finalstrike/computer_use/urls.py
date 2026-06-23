@@ -15,15 +15,16 @@ def canonical_ui_url(*, base_url: str, smoke_route: str = "/") -> str:
     return urljoin(base, route)
 
 
-def _endpoint_key(url: str) -> tuple[str, int]:
+def _endpoint_key(url: str) -> tuple[str, str, int]:
     parsed = urlparse(url)
+    scheme = (parsed.scheme or "").lower()
     host = (parsed.hostname or "").lower()
     if host in _LOOPBACK_HOSTS:
         host = "loopback"
     port = parsed.port
     if port is None:
-        port = 443 if parsed.scheme == "https" else 80
-    return host, port
+        port = 443 if scheme == "https" else 80
+    return scheme, host, port
 
 
 def validate_launch_url(url: str, *, ui_base_url: str) -> str:

@@ -91,7 +91,10 @@ class ActionLoop:
         try:
             return self._run_loop()
         finally:
-            self._cleanup_browser()
+            try:
+                self._cleanup_browser()
+            except OSError:
+                pass
 
     def _run_loop(self) -> ActionLoopResult:
         steps: list[UIStepResult] = []
@@ -131,6 +134,8 @@ class ActionLoop:
                     BrowserLaunchError,
                     NotImplementedError,
                     ValueError,
+                    subprocess.CalledProcessError,
+                    OSError,
                 ) as exc:
                     action_error = str(exc)
                     if action_attempt >= self.max_action_retries:
@@ -243,18 +248,23 @@ class ActionLoop:
         process = self._browser_process
         if process is None:
             return
-        self._browser_process = None
         if process.poll() is not None:
+            self._browser_process = None
             return
-        process.terminate()
         try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
+            process.terminate()
             try:
-                process.wait(timeout=2)
+                process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                pass
+                process.kill()
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    pass
+        except OSError:
+            pass
+        finally:
+            self._browser_process = None
 
     def _cleanup_browser(self) -> None:
         self._terminate_browser_process()

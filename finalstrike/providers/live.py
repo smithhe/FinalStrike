@@ -59,6 +59,23 @@ def assess_computer_use_llm(repo: Path) -> LiveLLMStatus:
     return _assess_llm_reachability(llm, secrets)
 
 
+_VISION_REJECT_PHRASES = (
+    "image_url",
+    "multi-modal",
+    "multimodal",
+    "vision",
+    "image input",
+    "does not support image",
+    "unsupported image",
+    "invalid image",
+)
+
+
+def _is_vision_rejection(message: str) -> bool:
+    lowered = message.lower()
+    return any(phrase in lowered for phrase in _VISION_REJECT_PHRASES)
+
+
 def assess_computer_use_vision(repo: Path) -> VisionLLMStatus:
     """Probe whether the computer-use LLM accepts multimodal (image) input."""
     llm, secrets, err = _load_repo_llm(repo, use_computer_use=True)
@@ -101,11 +118,7 @@ def assess_computer_use_vision(repo: Path) -> VisionLLMStatus:
             json_mode=False,
         )
     except LLMProviderError as exc:
-        message = str(exc).lower()
-        if any(
-            token in message
-            for token in ("image", "vision", "multimodal", "image_url", "multi-modal")
-        ):
+        if _is_vision_rejection(str(exc)):
             return VisionLLMStatus(
                 ready=False,
                 detail=f"Model does not accept image input: {exc}",

@@ -33,7 +33,12 @@ class XdotoolInputDriver(InputDriver):
         self._binary = binary
 
     def _run(self, *args: str) -> None:
-        subprocess.run([self._binary, *args], check=True, capture_output=True)
+        try:
+            subprocess.run([self._binary, *args], check=True, capture_output=True)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"{self._binary} failed ({exc.returncode}): {exc.stderr!r}"
+            ) from exc
 
     def click(self, x: int, y: int) -> None:
         self._run("mousemove", "--sync", str(x), str(y))
@@ -54,12 +59,17 @@ class XdotoolInputDriver(InputDriver):
             time.sleep(0.05)
 
     def focus_window(self, title_substring: str) -> None:
-        result = subprocess.run(
-            [self._binary, "search", "--name", title_substring],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                [self._binary, "search", "--name", title_substring],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"{self._binary} search failed ({exc.returncode}): {exc.stderr!r}"
+            ) from exc
         window_ids = [line.strip() for line in result.stdout.splitlines() if line.strip()]
         if not window_ids:
             raise RuntimeError(f"no window found matching title {title_substring!r}")
@@ -80,7 +90,12 @@ class YdotoolInputDriver(InputDriver):
         self._binary = binary
 
     def _run(self, *args: str) -> None:
-        subprocess.run([self._binary, *args], check=True, capture_output=True)
+        try:
+            subprocess.run([self._binary, *args], check=True, capture_output=True)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"{self._binary} failed ({exc.returncode}): {exc.stderr!r}"
+            ) from exc
 
     def click(self, x: int, y: int) -> None:
         self._run("mousemove", "--absolute", str(x), str(y))

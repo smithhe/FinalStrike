@@ -385,6 +385,16 @@ def test_validate_launch_url_rejects_foreign_host() -> None:
         validate_launch_url("http://evil.example/", ui_base_url=UI_BASE_URL)
 
 
+def test_validate_launch_url_rejects_scheme_mismatch() -> None:
+    from finalstrike.computer_use.urls import validate_launch_url
+
+    with pytest.raises(ValueError, match="outside configured"):
+        validate_launch_url(
+            "https://localhost:3000/",
+            ui_base_url="http://localhost:3000",
+        )
+
+
 def test_action_loop_per_step_retries_reset_between_steps(tmp_path: Path) -> None:
     """Each step gets its own action-retry budget (not a global pool)."""
     responses = [
