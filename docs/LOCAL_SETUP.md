@@ -280,9 +280,10 @@ stderr) for the root cause. Common failures:
   and only accept the provider default; FinalStrike omits `temperature` automatically
   when the API reports it is unsupported.
 - **Platform tools** — missing Chrome/Chromium, `DISPLAY`, or `xdotool`.
-- **`env down` reports "already stopped"** — terminal children died right after
-  `env up` (often port conflicts on 3000/8080). Re-run `env up`; if it fails,
-  free those ports or reboot stale processes. Success looks like
+- **`env down` reports "already stopped"** — terminal children outlived the shell
+  wrapper pid recorded at `env up` (common with `shell=True` terminals). Re-run
+  `env down` after upgrading FinalStrike (process-group teardown), or manually
+  stop listeners on 3000/8080 (`fuser -k 3000/tcp 8080/tcp`). Success looks like
   `[api] pid=... stopped`, not `already stopped`.
 
 Also inspect the last screenshots under `screenshots/` for visual context.

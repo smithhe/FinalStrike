@@ -112,6 +112,7 @@ class EnvOrchestrator:
                 name=terminal.name,
                 pid=proc.pid,
                 command=terminal.command,
+                pgid=os.getpgid(proc.pid),
             )
             self._started_pids.append(managed)
             self._log(f"Started [{terminal.name}] pid={proc.pid}")
@@ -179,30 +180,40 @@ class EnvOrchestrator:
         return True
 
     def _terminate_process(self, managed: ManagedProcess) -> str:
+        """Stop a terminal and any shell-spawned children via its process group."""
+        pgid = managed.process_group
+        label = f"[{managed.name}] pid={managed.pid}"
+
         try:
-            os.kill(managed.pid, signal.SIGTERM)
+            os.killpg(pgid, signal.SIGTERM)
         except ProcessLookupError:
-            return f"[{managed.name}] pid={managed.pid} already stopped"
+            return f"{label} already stopped"
         except OSError as exc:
-            return f"[{managed.name}] pid={managed.pid} SIGTERM failed: {exc}"
+            return f"{label} SIGTERM failed: {exc}"
 
         deadline = time.monotonic() + 5.0
         while time.monotonic() < deadline:
-            try:
-                os.kill(managed.pid, 0)
-            except ProcessLookupError:
-                return f"[{managed.name}] pid={managed.pid} stopped"
-            except OSError:
-                break
+            if not self._process_group_is_running(pgid):
+                return f"{label} stopped"
             time.sleep(0.1)
 
         try:
-            os.kill(managed.pid, signal.SIGKILL)
-            return f"[{managed.name}] pid={managed.pid} killed (SIGKILL)"
+            os.killpg(pgid, signal.SIGKILL)
+            return f"{label} killed (SIGKILL)"
         except ProcessLookupError:
-            return f"[{managed.name}] pid={managed.pid} stopped"
+            return f"{label} stopped"
         except OSError as exc:
-            return f"[{managed.name}] pid={managed.pid} SIGKILL failed: {exc}"
+            return f"{label} SIGKILL failed: {exc}"
+
+    @staticmethod
+    def _process_group_is_running(pgid: int) -> bool:
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        except OSError:
+            return True
+        return True
 
     def _append_command_logs(self, label: str, result: CommandRunResult) -> None:
         self._log(f"[{label}] exit={result.exit_code} duration={result.duration_ms}ms")

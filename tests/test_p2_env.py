@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import socket
 import subprocess
 import time
@@ -112,6 +113,82 @@ def test_env_orchestrator_processes_survive_after_up_returns(tmp_path: Path) -> 
         down_messages = orchestrator.down()
         assert down_messages
         assert not any("already stopped" in msg for msg in down_messages)
+    finally:
+        orchestrator.down()
+        assert load_env_state(repo) is None
+
+
+def test_env_orchestrator_down_kills_child_when_shell_pid_is_gone(
+    tmp_path: Path,
+) -> None:
+    """env down must stop shell-spawned children, not only the recorded shell pid."""
+    port = _free_port()
+    repo = _write_minimal_env_repo(tmp_path, port=port)
+    context = load_repo_context(repo, acceptance_path=ACCEPTANCE_FILE)
+    orchestrator = EnvOrchestrator(
+        repo=context.repo,
+        environment=context.environment,
+        config=context.config,
+        subprocess_env=context.subprocess_env,
+        health_timeout=15.0,
+    )
+    try:
+        result = orchestrator.up()
+        assert result.status == LayerStatus.PASSED
+        state = load_env_state(repo)
+        assert state is not None
+        managed = state.processes[0]
+
+        response = httpx.get(f"http://127.0.0.1:{port}/", timeout=5.0)
+        assert response.status_code == 200
+
+        # Simulate the shell wrapper dying while the server child keeps running.
+        os.kill(managed.pid, signal.SIGKILL)
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            try:
+                os.kill(managed.pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.05)
+
+        still_up = httpx.get(f"http://127.0.0.1:{port}/", timeout=5.0)
+        assert still_up.status_code == 200
+
+        down_messages = orchestrator.down()
+        assert down_messages
+        assert not any("already stopped" in msg for msg in down_messages)
+
+        with pytest.raises((httpx.ConnectError, httpx.ReadError, OSError)):
+            httpx.get(f"http://127.0.0.1:{port}/", timeout=1.0)
+    finally:
+        orchestrator.down()
+        assert load_env_state(repo) is None
+
+
+def test_env_orchestrator_down_stops_listening_port(tmp_path: Path) -> None:
+    """env down must tear down the actual server, not only the shell wrapper pid."""
+    port = _free_port()
+    repo = _write_minimal_env_repo(tmp_path, port=port)
+    context = load_repo_context(repo, acceptance_path=ACCEPTANCE_FILE)
+    orchestrator = EnvOrchestrator(
+        repo=context.repo,
+        environment=context.environment,
+        config=context.config,
+        subprocess_env=context.subprocess_env,
+        health_timeout=15.0,
+    )
+    try:
+        result = orchestrator.up()
+        assert result.status == LayerStatus.PASSED
+        httpx.get(f"http://127.0.0.1:{port}/", timeout=5.0)
+
+        down_messages = orchestrator.down()
+        assert down_messages
+        assert not any("already stopped" in msg for msg in down_messages)
+
+        with pytest.raises((httpx.ConnectError, httpx.ReadError, OSError)):
+            httpx.get(f"http://127.0.0.1:{port}/", timeout=1.0)
     finally:
         orchestrator.down()
         assert load_env_state(repo) is None

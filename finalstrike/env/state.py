@@ -16,6 +16,12 @@ class ManagedProcess(BaseModel):
     name: str
     pid: int
     command: str
+    pgid: int | None = None
+
+    @property
+    def process_group(self) -> int:
+        """Process group recorded at start; falls back to pid for legacy state."""
+        return self.pgid if self.pgid is not None else self.pid
 
 
 class EnvState(BaseModel):
