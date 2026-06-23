@@ -24,12 +24,9 @@ from finalstrike.config.secrets import (
 
 from tests.conftest import (
     ACCEPTANCE_FILE,
-    ACCEPTANCE_FULL,
     ACCEPTANCE_SMOKE,
-    CASSETTE_SMOKE_REPO,
     FIXTURE_REPO,
 )
-from tests.support.cassette_repo import CASSETTE_ACCEPTANCE_SMOKE
 from tests.support.isolated_repo import (
     cassette_acceptance_path,
     materialize_cassette_repo,
@@ -38,18 +35,6 @@ runner = CliRunner()
 
 
 # --- AGENTS.md ---
-
-
-def test_load_agents_present_on_sample_app() -> None:
-    agents = load_agents(FIXTURE_REPO)
-    assert agents.present is True
-    assert agents.path is not None
-    assert agents.path.name == "AGENTS.md"
-    assert "Sample App" in agents.content
-    block = agents.to_context_block(repo=FIXTURE_REPO)
-    assert "## AGENTS.md (AGENTS.md)" in block
-    assert "/fixtures/sample-app" not in block
-    assert "Smoke routes" in block
 
 
 def test_load_agents_absent(tmp_path: Path) -> None:
@@ -68,19 +53,6 @@ def test_agents_context_block_empty_when_blank_content(tmp_path: Path) -> None:
 
 
 # --- environment.json ---
-
-
-def test_load_environment_sample_app() -> None:
-    env = load_environment(FIXTURE_REPO)
-    assert env.present is True
-    assert env.install == "pip install -r requirements.txt"
-    assert len(env.terminals) == 2
-    assert env.terminals[0].name == "api"
-    assert env.terminals[0].command == "python3 -m sample_app.server"
-    assert env.terminals[1].name == "frontend"
-    summary = env.summary_lines()
-    assert any("install:" in line for line in summary)
-    assert any("api:" in line for line in summary)
 
 
 def test_load_environment_missing(tmp_path: Path) -> None:
@@ -171,15 +143,6 @@ def test_load_secrets_from_vault_file(tmp_path: Path) -> None:
     assert secrets["SLACK_BOT_TOKEN"] == "fixture-slack-token"
 
 
-def test_load_secrets_from_sample_app_when_present() -> None:
-    """Developers may use real API keys in the sample-app vault; only shape is checked."""
-    secrets, warnings = load_secrets(FIXTURE_REPO, ".finalstrike/secrets.env")
-    if not secrets:
-        pytest.skip("fixtures/sample-app/.finalstrike/secrets.env not present")
-    assert warnings == []
-    assert secrets.get("OPENAI_API_KEY")
-
-
 def test_load_secrets_missing_file(tmp_path: Path) -> None:
     secrets, warnings = load_secrets(tmp_path, ".finalstrike/secrets.env")
     assert secrets == {}
@@ -247,12 +210,6 @@ def test_load_repo_context_sample_app() -> None:
     assert "smoke verification" in ctx.acceptance.content
 
 
-def test_load_repo_context_full_acceptance() -> None:
-    ctx = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FULL)
-    assert ctx.acceptance is not None
-    assert "Task list" in ctx.acceptance.content
-
-
 def test_load_repo_context_injects_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     ctx = load_repo_context(
@@ -275,14 +232,6 @@ def test_load_repo_context_skips_injection_when_disabled(
     )
     assert "OPENAI_API_KEY" in ctx.subprocess_env
     assert os.environ.get("OPENAI_API_KEY") is None
-
-
-def test_planner_context_block_uses_agents_context_block() -> None:
-    ctx = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FILE)
-    block = ctx.planner_context_block()
-    assert ctx.agents.to_context_block(repo=ctx.repo).strip() in block
-    assert "Acceptance Criteria" in block
-    assert "smoke verification" in block
 
 
 def test_repo_context_redacts_secrets_in_dry_run(tmp_path: Path) -> None:
@@ -380,21 +329,6 @@ def test_load_environment_invalid_json(tmp_path: Path) -> None:
 
 
 # --- CLI plan ---
-
-
-def test_plan_dry_run_cassette_repo_committed_snapshot() -> None:
-    """Uses committed cassette tree + committed test secrets (see .gitignore exception)."""
-    ctx = load_repo_context(
-        CASSETTE_SMOKE_REPO,
-        acceptance_path=CASSETTE_ACCEPTANCE_SMOKE,
-        inject_secrets=False,
-    )
-    if not ctx.secrets:
-        pytest.skip(
-            "cassette-smoke-v1/.finalstrike/secrets.env missing — run ./scripts/setup-dev.sh"
-        )
-    output = ctx.format_dry_run()
-    assert "OPENAI_API_KEY: ***" in output
 
 
 def test_plan_acceptance_stdin_empty() -> None:

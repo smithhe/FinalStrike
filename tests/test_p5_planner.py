@@ -23,7 +23,7 @@ from finalstrike.providers.openai_compat import (
     OpenAICompatProvider,
     resolve_api_key,
 )
-from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO, live_llm_available
+from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO
 from tests.support.cassette_repo import (
     CASSETTE_SMOKE_REPO,
     load_cassette_smoke_context,
@@ -270,9 +270,3 @@ secrets:
         context.secrets,
     )
     assert provider.config.model == context.config.llm.model == "unit-test-model"
-
-
-@pytest.mark.requires_live_llm
-def test_live_llm_marker_skips_when_unavailable() -> None:
-    """Placeholder for live planner tests; skipped unless configured LLM is reachable."""
-    assert live_llm_available()

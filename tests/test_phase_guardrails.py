@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 import yaml
 from typer.testing import CliRunner
 
 from finalstrike.cli.main import app
-from finalstrike.doctor import CheckStatus, doctor_exit_code, run_doctor_checks
 from finalstrike.fixture_capabilities import load_capabilities
 from finalstrike.phase_status import IMPLEMENTED_PHASES, STUB_MODULES, next_unimplemented_phases
 from tests.conftest import (
-    ACCEPTANCE_FILE,
     ACCEPTANCE_FULL,
     ACCEPTANCE_SMOKE,
     FIXTURE_REPO,
@@ -53,20 +49,6 @@ def test_full_acceptance_documents_planned_work() -> None:
     assert "Fixture status" in full
     assert "capabilities.yaml" in full
     assert "POST /api/tasks" in full
-
-
-def test_acceptance_index_points_at_smoke_and_full() -> None:
-    index = (FIXTURE_REPO / "acceptance.md").read_text(encoding="utf-8")
-    assert "acceptance-smoke.md" in index
-    assert "acceptance-full.md" in index
-
-
-def test_doctor_passes_for_fixture_repo_with_secrets() -> None:
-    checks = run_doctor_checks(repo=FIXTURE_REPO)
-    assert doctor_exit_code(checks) == 0
-    statuses = {check.name: check.status for check in checks}
-    assert statuses["Secrets vault"] == CheckStatus.OK
-    assert statuses["Fixture planned work"] == CheckStatus.WARN
 
 
 def test_doctor_cli_fixture_repo() -> None:

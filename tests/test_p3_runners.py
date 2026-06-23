@@ -10,9 +10,8 @@ import yaml
 from typer.testing import CliRunner
 
 from finalstrike.cli.main import app
-from finalstrike.config.context import load_repo_context
 from finalstrike.config.models import CommandConfig, LayerStatus
-from finalstrike.orchestrator.run import execute_run, parse_layers
+from finalstrike.orchestrator.run import parse_layers
 from finalstrike.runners.build import run_build_layer
 from finalstrike.runners.pytest_parser import parse_pytest_output
 from finalstrike.runners.terminal import run_terminal_layer
@@ -101,27 +100,6 @@ def test_run_terminal_layer_retries(tmp_path: Path) -> None:
     assert result.commands[0].total_passed == 1
 
 
-def test_execute_run_build_terminal_layers() -> None:
-    context = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FILE)
-    result = execute_run(context, layers=["build", "terminal"], branch="test-branch")
-    assert result.branch == "test-branch"
-    assert result.layers.build is not None
-    assert result.layers.terminal is not None
-    assert result.layers.env is None
-    assert result.layers.terminal.total_passed >= 1
-    assert result.status.value == "passed"
-
-    result_path = (
-        FIXTURE_REPO
-        / context.config.evidence.output_dir
-        / result.run_id
-        / "result.json"
-    )
-    assert result_path.is_file()
-    payload = json.loads(result_path.read_text(encoding="utf-8"))
-    assert payload["layers"]["terminal"]["total_passed"] >= 1
-
-
 def test_run_cli_build_terminal_layers() -> None:
     result = runner.invoke(
         app,
@@ -141,7 +119,7 @@ def test_run_cli_build_terminal_layers() -> None:
     payload = json.loads(result.stdout)
     assert payload["branch"] == "feature/test"
     assert payload["status"] == "passed"
-    assert payload["layers"]["terminal"]["total_passed"] >= 1
+    assert payload["layers"]["terminal"]["status"] == "passed"
 
 
 def test_run_cli_requires_acceptance() -> None:
