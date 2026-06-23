@@ -195,6 +195,23 @@ class _FakeInput:
         del title_substring
 
 
+class _SequenceFlakyClickInput(_FakeInput):
+    def __init__(self, fail_pattern: list[bool]) -> None:
+        super().__init__()
+        self._fail_pattern = list(fail_pattern)
+        self._click_calls = 0
+
+    def click(self, x: int, y: int) -> None:
+        should_fail = (
+            self._click_calls < len(self._fail_pattern)
+            and self._fail_pattern[self._click_calls]
+        )
+        self._click_calls += 1
+        if should_fail:
+            raise RuntimeError("simulated transient click failure")
+        super().click(x, y)
+
+
 def test_action_loop_retries_invalid_json_on_same_step(tmp_path: Path) -> None:
     valid = json.dumps(
         {
@@ -231,7 +248,8 @@ def test_action_loop_retries_invalid_json_on_same_step(tmp_path: Path) -> None:
         provider=_FlakyProvider(),
         browser=BrowserKind.CHROMIUM,
         max_steps=3,
-        max_retries=2,
+        max_action_retries=2,
+        max_parse_retries=2,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
         ui_base_url=UI_BASE_URL,
@@ -262,7 +280,8 @@ def test_action_loop_surfaces_llm_error(tmp_path: Path) -> None:
         provider=_RaisingProvider(),
         browser=BrowserKind.CHROMIUM,
         max_steps=3,
-        max_retries=1,
+        max_action_retries=1,
+        max_parse_retries=1,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
         ui_base_url=UI_BASE_URL,
@@ -306,7 +325,8 @@ def test_action_loop_replay_cassette_completes(tmp_path: Path) -> None:
         provider=ReplayActionProvider(responses),
         browser=BrowserKind.CHROMIUM,
         max_steps=5,
-        max_retries=0,
+        max_action_retries=0,
+        max_parse_retries=0,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
         ui_base_url=UI_BASE_URL,
@@ -366,24 +386,18 @@ def test_validate_launch_url_rejects_foreign_host() -> None:
 
 
 def test_action_loop_per_step_retries_reset_between_steps(tmp_path: Path) -> None:
-    """Each step gets its own retry budget (not a global pool)."""
+    """Each step gets its own action-retry budget (not a global pool)."""
     responses = [
         json.dumps(
             {
-                "thought": "bad click",
-                "action": {"type": "click", "x": 99, "y": 99},
+                "thought": "click",
+                "action": {"type": "click", "x": 5, "y": 5},
             }
         ),
         json.dumps(
             {
-                "thought": "recover",
-                "action": {"type": "wait", "seconds": 0.01},
-            }
-        ),
-        json.dumps(
-            {
-                "thought": "bad click again",
-                "action": {"type": "click", "x": 99, "y": 99},
+                "thought": "click again",
+                "action": {"type": "click", "x": 5, "y": 5},
             }
         ),
         json.dumps(
@@ -393,24 +407,28 @@ def test_action_loop_per_step_retries_reset_between_steps(tmp_path: Path) -> Non
             }
         ),
     ]
+    provider = ReplayActionProvider(responses)
 
     loop = ActionLoop(
         instruction="verify",
         output_dir=tmp_path,
-        provider=ReplayActionProvider(responses),
+        provider=provider,
         browser=BrowserKind.CHROMIUM,
         max_steps=5,
-        max_retries=1,
+        max_action_retries=1,
+        max_parse_retries=0,
         screenshot_driver=_FakeScreenshotDriver(),
-        input_driver=_FakeInput(),
+        input_driver=_SequenceFlakyClickInput([True, False, True, False]),
         ui_base_url=UI_BASE_URL,
     )
     result = loop.run()
     assert result.status == LayerStatus.PASSED
-    assert len(result.steps) == 2
+    assert provider.calls == 3
+    assert len(result.steps) == 3
     assert result.screenshots == [
         "screenshots/step-000.png",
         "screenshots/step-001.png",
+        "screenshots/step-002.png",
     ]
 
 
@@ -418,14 +436,8 @@ def test_action_loop_action_retry_does_not_duplicate_steps(tmp_path: Path) -> No
     responses = [
         json.dumps(
             {
-                "thought": "bad click",
-                "action": {"type": "click", "x": 99, "y": 99},
-            }
-        ),
-        json.dumps(
-            {
-                "thought": "recover",
-                "action": {"type": "wait", "seconds": 0.01},
+                "thought": "click",
+                "action": {"type": "click", "x": 5, "y": 5},
             }
         ),
         json.dumps(
@@ -435,23 +447,97 @@ def test_action_loop_action_retry_does_not_duplicate_steps(tmp_path: Path) -> No
             }
         ),
     ]
+    provider = ReplayActionProvider(responses)
 
+    loop = ActionLoop(
+        instruction="verify",
+        output_dir=tmp_path,
+        provider=provider,
+        browser=BrowserKind.CHROMIUM,
+        max_steps=3,
+        max_action_retries=1,
+        max_parse_retries=0,
+        screenshot_driver=_FakeScreenshotDriver(),
+        input_driver=_SequenceFlakyClickInput([True, False]),
+        ui_base_url=UI_BASE_URL,
+    )
+    result = loop.run()
+    assert result.status == LayerStatus.PASSED
+    assert provider.calls == 2
+    assert len(result.steps) == 2
+    assert len(result.screenshots) == 2
+    assert all(step.status == LayerStatus.PASSED for step in result.steps)
+
+
+def test_action_retry_does_not_reinvoke_llm(tmp_path: Path) -> None:
+    responses = [
+        json.dumps(
+            {
+                "thought": "click",
+                "action": {"type": "click", "x": 5, "y": 5},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "done",
+                "action": {"type": "done", "success": True, "message": "ok"},
+            }
+        ),
+    ]
+    provider = ReplayActionProvider(responses)
+
+    loop = ActionLoop(
+        instruction="verify",
+        output_dir=tmp_path,
+        provider=provider,
+        browser=BrowserKind.CHROMIUM,
+        max_steps=3,
+        max_action_retries=1,
+        max_parse_retries=0,
+        screenshot_driver=_FakeScreenshotDriver(),
+        input_driver=_SequenceFlakyClickInput([True, False]),
+        ui_base_url=UI_BASE_URL,
+    )
+    result = loop.run()
+    assert result.status == LayerStatus.PASSED
+    assert provider.calls == 2
+
+
+def test_click_rejected_when_screenshot_dimensions_unknown(tmp_path: Path) -> None:
+    class _ZeroSizeScreenshot(_FakeScreenshot):
+        def __init__(self) -> None:
+            super().__init__()
+            self.width = 0
+            self.height = 0
+
+    class _ZeroSizeScreenshotDriver(_FakeScreenshotDriver):
+        def capture(self) -> _FakeScreenshot:
+            return _ZeroSizeScreenshot()
+
+    responses = [
+        json.dumps(
+            {
+                "thought": "click",
+                "action": {"type": "click", "x": 1, "y": 1},
+            }
+        ),
+    ]
     loop = ActionLoop(
         instruction="verify",
         output_dir=tmp_path,
         provider=ReplayActionProvider(responses),
         browser=BrowserKind.CHROMIUM,
-        max_steps=3,
-        max_retries=1,
-        screenshot_driver=_FakeScreenshotDriver(),
+        max_steps=2,
+        max_action_retries=0,
+        max_parse_retries=0,
+        screenshot_driver=_ZeroSizeScreenshotDriver(),
         input_driver=_FakeInput(),
         ui_base_url=UI_BASE_URL,
     )
     result = loop.run()
-    assert result.status == LayerStatus.PASSED
-    assert len(result.steps) == 2
-    assert len(result.screenshots) == 2
-    assert all(step.status == LayerStatus.PASSED for step in result.steps)
+    assert result.status == LayerStatus.FAILED
+    assert result.error is not None
+    assert "dimensions unknown" in result.error
 
 
 def test_build_action_messages_include_configured_ui() -> None:

@@ -53,7 +53,8 @@ def execute_ui_scenario(
         provider=llm,
         browser=context.config.ui.browser,
         max_steps=context.config.policy.max_ui_steps,
-        max_retries=context.config.policy.max_ui_retries,
+        max_action_retries=context.config.policy.max_ui_retries,
+        max_parse_retries=context.config.policy.max_ui_parse_retries,
         ui_base_url=context.config.ui.base_url,
         smoke_route=context.config.ui.smoke_route,
     )

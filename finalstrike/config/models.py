@@ -115,6 +115,7 @@ class PolicyConfig(BaseModel):
     max_test_retries: int = 0
     max_ui_steps: int = 40
     max_ui_retries: int = 4
+    max_ui_parse_retries: int = 4
 
 
 class FinalStrikeConfig(BaseModel):

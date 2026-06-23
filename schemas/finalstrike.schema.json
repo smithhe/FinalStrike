@@ -185,6 +185,11 @@
           "default": 4,
           "title": "Max Ui Retries",
           "type": "integer"
+        },
+        "max_ui_parse_retries": {
+          "default": 4,
+          "title": "Max Ui Parse Retries",
+          "type": "integer"
         }
       },
       "title": "PolicyConfig",

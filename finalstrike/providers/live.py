@@ -104,7 +104,7 @@ def assess_computer_use_vision(repo: Path) -> VisionLLMStatus:
         message = str(exc).lower()
         if any(
             token in message
-            for token in ("image", "vision", "multimodal", "content", "unsupported")
+            for token in ("image", "vision", "multimodal", "image_url", "multi-modal")
         ):
             return VisionLLMStatus(
                 ready=False,

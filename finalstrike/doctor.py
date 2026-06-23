@@ -6,6 +6,7 @@ import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+import os
 
 from finalstrike.fixture_capabilities import (
     count_planned_items,
@@ -314,24 +315,37 @@ def _optional_phase_checks(repo: Path | None = None) -> list[DoctorCheck]:
         )
 
     session = detect_session_type()
-    if session == SessionType.WAYLAND:
-        checks.append(
-            DoctorCheck(
-                name="Display session (P6)",
-                status=CheckStatus.WARN,
-                detail=(
-                    "Wayland detected — window focus requires X11/XWayland (xdotool). "
-                    "ydotool provides click/type/scroll only."
-                ),
-                phase=6,
-            )
-        )
-    elif session == SessionType.X11:
+    xdotool_path = shutil.which("xdotool")
+    if session == SessionType.X11:
         checks.append(
             DoctorCheck(
                 name="Display session (P6)",
                 status=CheckStatus.OK,
                 detail="X11 session — full computer-use input and window titles supported",
+                phase=6,
+            )
+        )
+    elif session == SessionType.WAYLAND and xdotool_path and os.environ.get("DISPLAY"):
+        checks.append(
+            DoctorCheck(
+                name="Display session (P6)",
+                status=CheckStatus.OK,
+                detail=(
+                    f"Wayland with XWayland (DISPLAY set, xdotool at {xdotool_path}) — "
+                    "full window focus and titles supported"
+                ),
+                phase=6,
+            )
+        )
+    elif session == SessionType.WAYLAND:
+        checks.append(
+            DoctorCheck(
+                name="Display session (P6)",
+                status=CheckStatus.WARN,
+                detail=(
+                    "Wayland without XWayland — ydotool provides click/type/scroll only; "
+                    "focus_window requires xdotool + DISPLAY"
+                ),
                 phase=6,
             )
         )

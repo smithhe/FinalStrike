@@ -67,13 +67,13 @@ class XdotoolInputDriver(InputDriver):
 
 
 class YdotoolInputDriver(InputDriver):
-    """Wayland input via ydotool (scroll via page keys; no native window focus)."""
+    """Wayland input via ydotool (wheel scroll via mousemove --wheel)."""
 
-    _SCROLL_KEYS = {
-        "up": "104:1",
-        "down": "105:1",
-        "left": "103:1",
-        "right": "106:1",
+    _WHEEL_DELTAS = {
+        "up": (0, 1),
+        "down": (0, -1),
+        "left": (-1, 0),
+        "right": (1, 0),
     }
 
     def __init__(self, binary: str = "ydotool") -> None:
@@ -100,11 +100,12 @@ class YdotoolInputDriver(InputDriver):
         self._run("key", code)
 
     def scroll(self, direction: str, amount: int = 3) -> None:
-        key = self._SCROLL_KEYS.get(direction)
-        if key is None:
+        delta = self._WHEEL_DELTAS.get(direction)
+        if delta is None:
             raise ValueError(f"unsupported scroll direction: {direction}")
+        dx, dy = delta
         for _ in range(max(1, amount)):
-            self._run("key", key)
+            self._run("mousemove", "--wheel", "--", str(dx), str(dy))
             time.sleep(0.05)
 
     def focus_window(self, title_substring: str) -> None:

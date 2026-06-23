@@ -18,6 +18,7 @@ llm:
   provider: openai_compat
 policy:
   fail_fast: false
+  max_ui_parse_retries: 4
   max_ui_retries: 4
   max_ui_steps: 40
 project:

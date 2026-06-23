@@ -61,7 +61,8 @@ class ActionLoop:
         provider: ActionLLMProvider,
         browser: BrowserKind,
         max_steps: int,
-        max_retries: int,
+        max_action_retries: int,
+        max_parse_retries: int,
         ui_base_url: str | None = None,
         smoke_route: str = "/",
         screenshot_driver: ScreenshotDriver | None = None,
@@ -74,7 +75,8 @@ class ActionLoop:
         self.provider = provider
         self.browser = browser
         self.max_steps = max_steps
-        self.max_retries = max_retries
+        self.max_action_retries = max_action_retries
+        self.max_parse_retries = max_parse_retries
         self.ui_base_url = ui_base_url
         self.smoke_route = smoke_route
         self._title_load_timeout = title_load_timeout
@@ -96,64 +98,46 @@ class ActionLoop:
         screenshots: list[str] = []
 
         step_index = 0
-        step_action_retries = 0
         while step_index < self.max_steps:
-            screenshot = self._screenshot_driver.capture()
-            rel_name = f"screenshots/step-{step_index:03d}.png"
-            abs_path = self.output_dir / rel_name
-            screenshot.save(abs_path)
-            if step_index < len(screenshots):
-                screenshots[step_index] = rel_name
-            else:
-                screenshots.append(rel_name)
-
+            screenshot, rel_name = self._capture_step_screenshot(step_index, screenshots)
             a11y = self._a11y_driver.capture()
-            validation_error: str | None = None
-            parsed = None
-            for attempt in range(self.max_retries + 1):
-                messages = build_action_messages(
-                    instruction=self.instruction,
-                    screenshot_data_url=screenshot.as_data_url(),
-                    a11y_summary=a11y.summary(),
-                    history=self._history,
-                    validation_error=validation_error,
-                    ui_base_url=self.ui_base_url,
-                    smoke_route=self.smoke_route,
+
+            parse_result = self._request_parsed_action(
+                screenshot=screenshot,
+                a11y=a11y,
+            )
+            if isinstance(parse_result, str):
+                return ActionLoopResult(
+                    status=LayerStatus.FAILED,
+                    steps=steps,
+                    screenshots=screenshots,
+                    error=parse_result,
                 )
-                try:
-                    raw = self.provider.chat_completion_multimodal(
-                        messages,
-                        temperature=0.2,
-                        json_mode=True,
+
+            action, label = parse_result
+            action_error: str | None = None
+            for action_attempt in range(self.max_action_retries + 1):
+                if action_attempt > 0:
+                    screenshot, rel_name = self._capture_step_screenshot(
+                        step_index,
+                        screenshots,
                     )
-                    parsed = parse_action_response(raw)
+                try:
+                    self._execute_action(action, screenshot=screenshot)
+                    action_error = None
                     break
-                except (LLMProviderError, ValueError) as exc:
-                    validation_error = str(exc)
-                    if attempt >= self.max_retries:
-                        return ActionLoopResult(
-                            status=LayerStatus.FAILED,
-                            steps=steps,
-                            screenshots=screenshots,
-                            error=validation_error,
-                        )
-
-            assert parsed is not None
-            action = parsed.action
-            label = action_summary(action)
-
-            try:
-                self._execute_action(action, screenshot=screenshot)
-            except (
-                RuntimeError,
-                BrowserLaunchError,
-                NotImplementedError,
-                ValueError,
-            ) as exc:
-                if step_action_retries < self.max_retries:
-                    step_action_retries += 1
+                except (
+                    RuntimeError,
+                    BrowserLaunchError,
+                    NotImplementedError,
+                    ValueError,
+                ) as exc:
+                    action_error = str(exc)
+                    if action_attempt >= self.max_action_retries:
+                        break
                     self._history.append(f"{label} failed: {exc}")
-                    continue
+
+            if action_error is not None:
                 steps.append(
                     UIStepResult(
                         step_index=step_index,
@@ -166,10 +150,9 @@ class ActionLoop:
                     status=LayerStatus.FAILED,
                     steps=steps,
                     screenshots=screenshots,
-                    error=str(exc),
+                    error=action_error,
                 )
 
-            step_action_retries = 0
             steps.append(
                 UIStepResult(
                     step_index=step_index,
@@ -209,7 +192,54 @@ class ActionLoop:
             error=f"exceeded max_ui_steps ({self.max_steps})",
         )
 
-    def _cleanup_browser(self) -> None:
+    def _capture_step_screenshot(
+        self,
+        step_index: int,
+        screenshots: list[str],
+    ) -> tuple[Screenshot, str]:
+        screenshot = self._screenshot_driver.capture()
+        rel_name = f"screenshots/step-{step_index:03d}.png"
+        abs_path = self.output_dir / rel_name
+        screenshot.save(abs_path)
+        if step_index < len(screenshots):
+            screenshots[step_index] = rel_name
+        else:
+            screenshots.append(rel_name)
+        return screenshot, rel_name
+
+    def _request_parsed_action(
+        self,
+        *,
+        screenshot: Screenshot,
+        a11y,
+    ) -> tuple[ActionPayload, str] | str:
+        validation_error: str | None = None
+        for attempt in range(self.max_parse_retries + 1):
+            messages = build_action_messages(
+                instruction=self.instruction,
+                screenshot_data_url=screenshot.as_data_url(),
+                a11y_summary=a11y.summary(),
+                history=self._history,
+                validation_error=validation_error,
+                ui_base_url=self.ui_base_url,
+                smoke_route=self.smoke_route,
+            )
+            try:
+                raw = self.provider.chat_completion_multimodal(
+                    messages,
+                    temperature=0.2,
+                    json_mode=True,
+                )
+                parsed = parse_action_response(raw)
+                action = parsed.action
+                return action, action_summary(action)
+            except (LLMProviderError, ValueError) as exc:
+                validation_error = str(exc)
+                if attempt >= self.max_parse_retries:
+                    return validation_error
+        return "failed to obtain a valid action from the vision model"
+
+    def _terminate_browser_process(self) -> None:
         process = self._browser_process
         if process is None:
             return
@@ -221,7 +251,13 @@ class ActionLoop:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             process.kill()
-            process.wait(timeout=2)
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+
+    def _cleanup_browser(self) -> None:
+        self._terminate_browser_process()
 
     def _input(self) -> InputDriver:
         if self._input_driver is None:
@@ -236,6 +272,7 @@ class ActionLoop:
                     "launch actions require ui.base_url in finalstrike.yaml"
                 )
             url = validate_launch_url(action.url, ui_base_url=self.ui_base_url)
+            self._terminate_browser_process()
             self._browser_process = launch_browser(
                 url,
                 browser=self.browser,
@@ -288,7 +325,10 @@ class ActionLoop:
     @staticmethod
     def _validate_click_coords(x: int, y: int, screenshot: Screenshot) -> None:
         if screenshot.width <= 0 or screenshot.height <= 0:
-            return
+            raise ValueError(
+                f"cannot validate click ({x}, {y}): screenshot dimensions unknown "
+                f"({screenshot.width}x{screenshot.height})"
+            )
         if not (0 <= x < screenshot.width and 0 <= y < screenshot.height):
             raise ValueError(
                 f"click ({x}, {y}) outside screenshot bounds "

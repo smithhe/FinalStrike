@@ -4,7 +4,7 @@ component: planner
 acceptance: tests/fixtures/cassette-smoke-v1/acceptance-smoke.md
 acceptance_sha256: d90adc0a30bea30547a4c31db7d5b9db6eb6aa6969cfffb9ddc806354c84a988
 prompt_version: c59d39b2c27ed2ef
-messages_sha256: 30bc82b94e883aa0d5cdcb8ed3e033fdc699043caded73a13eadd2e57be9657e
+messages_sha256: 2554ccfa9ea966cbf9578464e0f9ebbd359c405a1daec5fce5504904de24853f
 recorded_with:
   base_url: http://localhost:11434/v1
   model: llama3
