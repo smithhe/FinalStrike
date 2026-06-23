@@ -6,6 +6,7 @@ import socket
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+from urllib.parse import urlparse
 
 import pytest
 
@@ -18,7 +19,7 @@ from tests.support.action_cassette import (
     assert_action_cassette_current,
     load_action_cassette,
 )
-from tests.test_p6_computer_use import _FakeInput, _FakeScreenshotDriver
+from tests.test_p6_computer_use import _FakeBrowserProcess, _FakeInput, _FakeScreenshotDriver
 
 
 def _free_port() -> int:
@@ -66,6 +67,9 @@ def test_smoke_title_scenario_with_action_cassette(
     context = load_cassette_smoke_context(inject_secrets=False)
     assert context.config.ui is not None
 
+    parsed = urlparse(static_frontend_server)
+    ephemeral_ui_base = f"{parsed.scheme}://{parsed.netloc}"
+
     instruction = (
         f'Open {static_frontend_server} and verify the page title is "Sample App"'
     )
@@ -79,6 +83,8 @@ def test_smoke_title_scenario_with_action_cassette(
         max_retries=0,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
+        ui_base_url=ephemeral_ui_base,
+        smoke_route=context.config.ui.smoke_route,
     )
 
     import finalstrike.computer_use.loop as loop_module
@@ -88,7 +94,7 @@ def test_smoke_title_scenario_with_action_cassette(
     def _fake_launch(url: str, *, browser):  # type: ignore[no-untyped-def]
         del browser
         launched.append(url)
-        return object()
+        return _FakeBrowserProcess()
 
     original = loop_module.launch_browser
     loop_module.launch_browser = _fake_launch

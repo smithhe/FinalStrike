@@ -15,6 +15,7 @@ from finalstrike.computer_use.title import (
 )
 from finalstrike.config.models import BrowserKind, LayerStatus
 from tests.test_p6_computer_use import (
+    _FakeBrowserProcess,
     _FakeInput,
     _FakeScreenshotDriver,
 )
@@ -102,7 +103,7 @@ def test_done_failure_overridden_when_wm_title_matches(tmp_path: Path) -> None:
     def _fake_launch(url: str, *, browser: BrowserKind) -> object:
         del browser
         launched.append(url)
-        return object()
+        return _FakeBrowserProcess()
 
     a11y = _SequenceA11yDriver(
         [
@@ -124,6 +125,7 @@ def test_done_failure_overridden_when_wm_title_matches(tmp_path: Path) -> None:
         input_driver=_FakeInput(),
         a11y_driver=a11y,
         title_load_timeout=0.5,
+        ui_base_url="http://localhost:3000",
     )
 
     original = loop_module.launch_browser

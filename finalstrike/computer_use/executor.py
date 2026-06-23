@@ -54,6 +54,8 @@ def execute_ui_scenario(
         browser=context.config.ui.browser,
         max_steps=context.config.policy.max_ui_steps,
         max_retries=context.config.policy.max_ui_retries,
+        ui_base_url=context.config.ui.base_url,
+        smoke_route=context.config.ui.smoke_route,
     )
     loop_result = loop.run()
 

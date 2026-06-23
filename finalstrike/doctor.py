@@ -13,6 +13,7 @@ from finalstrike.fixture_capabilities import (
     load_capabilities,
 )
 from finalstrike.computer_use.browser import browser_available, browser_check_detail
+from finalstrike.computer_use.platform.session import SessionType, detect_session_type
 from finalstrike.config.loader import load_config
 from finalstrike.config.overrides import (
     LOCAL_CONFIG_EXAMPLE,
@@ -252,7 +253,7 @@ def _fixture_checks(repo: Path) -> list[DoctorCheck]:
 
 
 def _optional_phase_checks(repo: Path | None = None) -> list[DoctorCheck]:
-    from finalstrike.providers.live import assess_live_llm
+    from finalstrike.providers.live import assess_computer_use_llm, assess_computer_use_vision, assess_live_llm
 
     checks: list[DoctorCheck] = []
 
@@ -266,6 +267,34 @@ def _optional_phase_checks(repo: Path | None = None) -> list[DoctorCheck]:
                 phase=5,
             )
         )
+        cu_llm_status = assess_computer_use_llm(repo)
+        checks.append(
+            DoctorCheck(
+                name="Computer-use LLM (P6)",
+                status=CheckStatus.OK if cu_llm_status.ready else CheckStatus.SKIP,
+                detail=cu_llm_status.detail,
+                phase=6,
+            )
+        )
+        if cu_llm_status.ready:
+            vision_status = assess_computer_use_vision(repo)
+            checks.append(
+                DoctorCheck(
+                    name="Computer-use vision (P6)",
+                    status=CheckStatus.OK if vision_status.ready else CheckStatus.WARN,
+                    detail=vision_status.detail,
+                    phase=6,
+                )
+            )
+        else:
+            checks.append(
+                DoctorCheck(
+                    name="Computer-use vision (P6)",
+                    status=CheckStatus.SKIP,
+                    detail="Computer-use LLM endpoint not reachable",
+                    phase=6,
+                )
+            )
     else:
         checks.append(
             DoctorCheck(
@@ -273,6 +302,37 @@ def _optional_phase_checks(repo: Path | None = None) -> list[DoctorCheck]:
                 status=CheckStatus.SKIP,
                 detail="Pass --repo to check configured llm.base_url",
                 phase=5,
+            )
+        )
+        checks.append(
+            DoctorCheck(
+                name="Computer-use LLM (P6)",
+                status=CheckStatus.SKIP,
+                detail="Pass --repo to check computer-use LLM endpoint",
+                phase=6,
+            )
+        )
+
+    session = detect_session_type()
+    if session == SessionType.WAYLAND:
+        checks.append(
+            DoctorCheck(
+                name="Display session (P6)",
+                status=CheckStatus.WARN,
+                detail=(
+                    "Wayland detected — window focus requires X11/XWayland (xdotool). "
+                    "ydotool provides click/type/scroll only."
+                ),
+                phase=6,
+            )
+        )
+    elif session == SessionType.X11:
+        checks.append(
+            DoctorCheck(
+                name="Display session (P6)",
+                status=CheckStatus.OK,
+                detail="X11 session — full computer-use input and window titles supported",
+                phase=6,
             )
         )
 

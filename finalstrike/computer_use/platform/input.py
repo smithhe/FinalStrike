@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import time
@@ -66,7 +67,14 @@ class XdotoolInputDriver(InputDriver):
 
 
 class YdotoolInputDriver(InputDriver):
-    """Minimal Wayland input via ydotool (P6 spike)."""
+    """Wayland input via ydotool (scroll via page keys; no native window focus)."""
+
+    _SCROLL_KEYS = {
+        "up": "104:1",
+        "down": "105:1",
+        "left": "103:1",
+        "right": "106:1",
+    }
 
     def __init__(self, binary: str = "ydotool") -> None:
         self._binary = binary
@@ -92,16 +100,25 @@ class YdotoolInputDriver(InputDriver):
         self._run("key", code)
 
     def scroll(self, direction: str, amount: int = 3) -> None:
-        del direction, amount
-        raise NotImplementedError("ydotool scroll not implemented in P6 spike")
+        key = self._SCROLL_KEYS.get(direction)
+        if key is None:
+            raise ValueError(f"unsupported scroll direction: {direction}")
+        for _ in range(max(1, amount)):
+            self._run("key", key)
+            time.sleep(0.05)
 
     def focus_window(self, title_substring: str) -> None:
-        del title_substring
-        raise NotImplementedError("ydotool window focus not implemented in P6 spike")
+        raise NotImplementedError(
+            "ydotool cannot focus windows by title; use an X11 session or XWayland "
+            f"(xdotool) when focus_window is required (requested {title_substring!r})"
+        )
 
 
 def create_input_driver(session: SessionType | None = None) -> InputDriver:
     session = session or detect_session_type()
+    xdotool = shutil.which("xdotool")
+    if xdotool and (session != SessionType.WAYLAND or os.environ.get("DISPLAY")):
+        return XdotoolInputDriver(xdotool)
     if session == SessionType.WAYLAND:
         ydotool = shutil.which("ydotool")
         if ydotool:
@@ -110,7 +127,6 @@ def create_input_driver(session: SessionType | None = None) -> InputDriver:
             "Wayland session detected but ydotool is not installed. "
             "Install ydotool or use an X11 session."
         )
-    xdotool = shutil.which("xdotool")
     if xdotool:
         return XdotoolInputDriver(xdotool)
     raise RuntimeError(

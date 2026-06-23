@@ -35,7 +35,7 @@ class AccessibilityDriver:
 
     def capture(self) -> AccessibilitySnapshot:
         windows: list[str] = []
-        if self._xdotool and self._session != SessionType.WAYLAND:
+        if self._xdotool:
             windows = _list_x11_window_titles(self._xdotool)
         return AccessibilitySnapshot(session=self._session, windows=windows)
 

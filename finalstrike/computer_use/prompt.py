@@ -58,12 +58,31 @@ def build_action_messages(
     a11y_summary: str,
     history: list[str],
     validation_error: str | None = None,
+    ui_base_url: str | None = None,
+    smoke_route: str = "/",
 ) -> list[dict[str, object]]:
     """Build multimodal chat messages for the vision LLM."""
+    from finalstrike.computer_use.urls import canonical_ui_url
+
     history_block = "\n".join(history[-8:]) if history else "(none)"
     text_sections = [
         "## Instruction",
         instruction,
+    ]
+    if ui_base_url is not None:
+        canonical = canonical_ui_url(base_url=ui_base_url, smoke_route=smoke_route)
+        text_sections.extend(
+            [
+                "",
+                "## Configured UI",
+                f"base_url: {ui_base_url}",
+                f"smoke_route: {smoke_route}",
+                f"canonical_url: {canonical}",
+                "Use launch with a URL on this origin when opening the app.",
+            ]
+        )
+    text_sections.extend(
+        [
         "",
         "## Accessibility",
         a11y_summary,
@@ -77,7 +96,8 @@ def build_action_messages(
         "```",
         "",
         "Choose the next action JSON object.",
-    ]
+        ]
+    )
     if validation_error:
         text_sections.extend(
             [

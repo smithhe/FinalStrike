@@ -26,6 +26,15 @@ class Screenshot:
         return f"data:image/png;base64,{encoded}"
 
 
+def _png_dimensions(png_bytes: bytes) -> tuple[int, int]:
+    """Read width/height from a PNG header without extra dependencies."""
+    if len(png_bytes) >= 24 and png_bytes[:8] == b"\x89PNG\r\n\x1a\n":
+        width = int.from_bytes(png_bytes[16:20], "big")
+        height = int.from_bytes(png_bytes[20:24], "big")
+        return width, height
+    return 0, 0
+
+
 class ScreenshotDriver:
     """Capture the full desktop as PNG."""
 
@@ -63,4 +72,5 @@ class ScreenshotDriver:
             png_bytes = path.read_bytes()
         finally:
             path.unlink(missing_ok=True)
-        return Screenshot(png_bytes=png_bytes, width=0, height=0)
+        width, height = _png_dimensions(png_bytes)
+        return Screenshot(png_bytes=png_bytes, width=width, height=height)

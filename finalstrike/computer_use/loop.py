@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,7 +17,7 @@ from finalstrike.computer_use.actions import (
 from finalstrike.computer_use.browser import BrowserLaunchError, launch_browser
 from finalstrike.computer_use.platform.a11y import AccessibilityDriver
 from finalstrike.computer_use.platform.input import InputDriver, create_input_driver
-from finalstrike.computer_use.platform.screenshot import ScreenshotDriver
+from finalstrike.computer_use.platform.screenshot import Screenshot, ScreenshotDriver
 from finalstrike.computer_use.prompt import (
     build_action_messages,
     summarize_completed_action,
@@ -26,6 +27,7 @@ from finalstrike.computer_use.title import (
     wait_for_window_title,
     window_list_includes_title,
 )
+from finalstrike.computer_use.urls import validate_launch_url
 from finalstrike.config.models import BrowserKind, LayerStatus, UIStepResult
 from finalstrike.providers.openai_compat import LLMProviderError
 
@@ -60,6 +62,8 @@ class ActionLoop:
         browser: BrowserKind,
         max_steps: int,
         max_retries: int,
+        ui_base_url: str | None = None,
+        smoke_route: str = "/",
         screenshot_driver: ScreenshotDriver | None = None,
         a11y_driver: AccessibilityDriver | None = None,
         input_driver: InputDriver | None = None,
@@ -71,26 +75,37 @@ class ActionLoop:
         self.browser = browser
         self.max_steps = max_steps
         self.max_retries = max_retries
+        self.ui_base_url = ui_base_url
+        self.smoke_route = smoke_route
         self._title_load_timeout = title_load_timeout
         self._screenshot_driver = screenshot_driver or ScreenshotDriver()
         self._a11y_driver = a11y_driver or AccessibilityDriver()
         self._input_driver = input_driver
         self._history: list[str] = []
-        self._browser_process = None
+        self._browser_process: subprocess.Popen[bytes] | None = None
 
     def run(self) -> ActionLoopResult:
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            return self._run_loop()
+        finally:
+            self._cleanup_browser()
+
+    def _run_loop(self) -> ActionLoopResult:
         steps: list[UIStepResult] = []
         screenshots: list[str] = []
-        retries_remaining = self.max_retries
 
         step_index = 0
+        step_action_retries = 0
         while step_index < self.max_steps:
             screenshot = self._screenshot_driver.capture()
             rel_name = f"screenshots/step-{step_index:03d}.png"
             abs_path = self.output_dir / rel_name
             screenshot.save(abs_path)
-            screenshots.append(rel_name)
+            if step_index < len(screenshots):
+                screenshots[step_index] = rel_name
+            else:
+                screenshots.append(rel_name)
 
             a11y = self._a11y_driver.capture()
             validation_error: str | None = None
@@ -102,6 +117,8 @@ class ActionLoop:
                     a11y_summary=a11y.summary(),
                     history=self._history,
                     validation_error=validation_error,
+                    ui_base_url=self.ui_base_url,
+                    smoke_route=self.smoke_route,
                 )
                 try:
                     raw = self.provider.chat_completion_multimodal(
@@ -124,27 +141,27 @@ class ActionLoop:
             assert parsed is not None
             action = parsed.action
             label = action_summary(action)
-            step = UIStepResult(
-                step_index=step_index,
-                action=label,
-                screenshot=rel_name,
-                status=LayerStatus.PASSED,
-            )
 
             try:
-                self._execute_action(action)
+                self._execute_action(action, screenshot=screenshot)
             except (
                 RuntimeError,
                 BrowserLaunchError,
                 NotImplementedError,
                 ValueError,
             ) as exc:
-                step.status = LayerStatus.FAILED
-                steps.append(step)
-                if retries_remaining > 0:
-                    retries_remaining -= 1
+                if step_action_retries < self.max_retries:
+                    step_action_retries += 1
                     self._history.append(f"{label} failed: {exc}")
                     continue
+                steps.append(
+                    UIStepResult(
+                        step_index=step_index,
+                        action=label,
+                        screenshot=rel_name,
+                        status=LayerStatus.FAILED,
+                    )
+                )
                 return ActionLoopResult(
                     status=LayerStatus.FAILED,
                     steps=steps,
@@ -152,7 +169,15 @@ class ActionLoop:
                     error=str(exc),
                 )
 
-            steps.append(step)
+            step_action_retries = 0
+            steps.append(
+                UIStepResult(
+                    step_index=step_index,
+                    action=label,
+                    screenshot=rel_name,
+                    status=LayerStatus.PASSED,
+                )
+            )
             self._history.append(summarize_completed_action(action))
             step_index += 1
 
@@ -184,16 +209,35 @@ class ActionLoop:
             error=f"exceeded max_ui_steps ({self.max_steps})",
         )
 
+    def _cleanup_browser(self) -> None:
+        process = self._browser_process
+        if process is None:
+            return
+        self._browser_process = None
+        if process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=2)
+
     def _input(self) -> InputDriver:
         if self._input_driver is None:
             self._input_driver = create_input_driver()
         return self._input_driver
 
-    def _execute_action(self, action: ActionPayload) -> None:
+    def _execute_action(self, action: ActionPayload, *, screenshot: Screenshot) -> None:
         if action.type == "launch":
             assert action.url is not None
+            if self.ui_base_url is None:
+                raise ValueError(
+                    "launch actions require ui.base_url in finalstrike.yaml"
+                )
+            url = validate_launch_url(action.url, ui_base_url=self.ui_base_url)
             self._browser_process = launch_browser(
-                action.url,
+                url,
                 browser=self.browser,
             )
             expected_title = expected_title_from_instruction(self.instruction)
@@ -207,6 +251,7 @@ class ActionLoop:
 
         if action.type == "click":
             assert action.x is not None and action.y is not None
+            self._validate_click_coords(action.x, action.y, screenshot)
             self._input().click(action.x, action.y)
             return
 
@@ -239,6 +284,16 @@ class ActionLoop:
             return
 
         raise ValueError(f"unsupported action type: {action.type}")
+
+    @staticmethod
+    def _validate_click_coords(x: int, y: int, screenshot: Screenshot) -> None:
+        if screenshot.width <= 0 or screenshot.height <= 0:
+            return
+        if not (0 <= x < screenshot.width and 0 <= y < screenshot.height):
+            raise ValueError(
+                f"click ({x}, {y}) outside screenshot bounds "
+                f"({screenshot.width}x{screenshot.height})"
+            )
 
 
 class ReplayActionProvider:

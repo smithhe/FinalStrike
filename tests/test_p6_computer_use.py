@@ -26,6 +26,8 @@ from finalstrike.config.loader import load_config
 from finalstrike.config.models import BrowserKind, LayerStatus
 from tests.conftest import FIXTURE_REPO
 
+UI_BASE_URL = "http://localhost:3000"
+
 
 def test_parse_launch_action() -> None:
     raw = json.dumps(
@@ -158,6 +160,21 @@ class _FakeScreenshotDriver:
         return _FakeScreenshot()
 
 
+class _FakeBrowserProcess:
+    def __init__(self) -> None:
+        self.terminated = False
+
+    def poll(self) -> None:
+        return None
+
+    def terminate(self) -> None:
+        self.terminated = True
+
+    def wait(self, timeout: float | None = None) -> int:
+        del timeout
+        return 0
+
+
 class _FakeInput:
     def __init__(self) -> None:
         self.launched: list[str] = []
@@ -217,6 +234,7 @@ def test_action_loop_retries_invalid_json_on_same_step(tmp_path: Path) -> None:
         max_retries=2,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
     )
     result = loop.run()
     assert result.status == LayerStatus.PASSED
@@ -247,6 +265,7 @@ def test_action_loop_surfaces_llm_error(tmp_path: Path) -> None:
         max_retries=1,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
     )
     result = loop.run()
     assert result.status == LayerStatus.FAILED
@@ -290,17 +309,21 @@ def test_action_loop_replay_cassette_completes(tmp_path: Path) -> None:
         max_retries=0,
         screenshot_driver=_FakeScreenshotDriver(),
         input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
     )
 
     # Monkeypatch launch_browser to avoid real browser in unit test
     import finalstrike.computer_use.loop as loop_module
 
     launched: list[str] = []
+    browser_processes: list[_FakeBrowserProcess] = []
 
-    def _fake_launch(url: str, *, browser: BrowserKind) -> object:
+    def _fake_launch(url: str, *, browser: BrowserKind) -> _FakeBrowserProcess:
         del browser
         launched.append(url)
-        return object()
+        process = _FakeBrowserProcess()
+        browser_processes.append(process)
+        return process
 
     original = loop_module.launch_browser
     loop_module.launch_browser = _fake_launch
@@ -312,7 +335,151 @@ def test_action_loop_replay_cassette_completes(tmp_path: Path) -> None:
     assert result.status == LayerStatus.PASSED
     assert len(result.steps) == 3
     assert launched == ["http://localhost:3000/"]
+    assert browser_processes[0].terminated is True
     assert (tmp_path / "screenshots" / "step-000.png").is_file()
+
+
+def test_validate_launch_url_rejects_non_http(tmp_path: Path) -> None:
+    from finalstrike.computer_use.urls import validate_launch_url
+
+    with pytest.raises(ValueError, match="http or https"):
+        validate_launch_url("file:///etc/passwd", ui_base_url=UI_BASE_URL)
+
+
+def test_validate_launch_url_allows_loopback_alias() -> None:
+    from finalstrike.computer_use.urls import validate_launch_url
+
+    assert (
+        validate_launch_url(
+            "http://127.0.0.1:3000/",
+            ui_base_url="http://localhost:3000",
+        )
+        == "http://127.0.0.1:3000/"
+    )
+
+
+def test_validate_launch_url_rejects_foreign_host() -> None:
+    from finalstrike.computer_use.urls import validate_launch_url
+
+    with pytest.raises(ValueError, match="outside configured"):
+        validate_launch_url("http://evil.example/", ui_base_url=UI_BASE_URL)
+
+
+def test_action_loop_per_step_retries_reset_between_steps(tmp_path: Path) -> None:
+    """Each step gets its own retry budget (not a global pool)."""
+    responses = [
+        json.dumps(
+            {
+                "thought": "bad click",
+                "action": {"type": "click", "x": 99, "y": 99},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "recover",
+                "action": {"type": "wait", "seconds": 0.01},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "bad click again",
+                "action": {"type": "click", "x": 99, "y": 99},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "done",
+                "action": {"type": "done", "success": True, "message": "ok"},
+            }
+        ),
+    ]
+
+    loop = ActionLoop(
+        instruction="verify",
+        output_dir=tmp_path,
+        provider=ReplayActionProvider(responses),
+        browser=BrowserKind.CHROMIUM,
+        max_steps=5,
+        max_retries=1,
+        screenshot_driver=_FakeScreenshotDriver(),
+        input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
+    )
+    result = loop.run()
+    assert result.status == LayerStatus.PASSED
+    assert len(result.steps) == 2
+    assert result.screenshots == [
+        "screenshots/step-000.png",
+        "screenshots/step-001.png",
+    ]
+
+
+def test_action_loop_action_retry_does_not_duplicate_steps(tmp_path: Path) -> None:
+    responses = [
+        json.dumps(
+            {
+                "thought": "bad click",
+                "action": {"type": "click", "x": 99, "y": 99},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "recover",
+                "action": {"type": "wait", "seconds": 0.01},
+            }
+        ),
+        json.dumps(
+            {
+                "thought": "done",
+                "action": {"type": "done", "success": True, "message": "ok"},
+            }
+        ),
+    ]
+
+    loop = ActionLoop(
+        instruction="verify",
+        output_dir=tmp_path,
+        provider=ReplayActionProvider(responses),
+        browser=BrowserKind.CHROMIUM,
+        max_steps=3,
+        max_retries=1,
+        screenshot_driver=_FakeScreenshotDriver(),
+        input_driver=_FakeInput(),
+        ui_base_url=UI_BASE_URL,
+    )
+    result = loop.run()
+    assert result.status == LayerStatus.PASSED
+    assert len(result.steps) == 2
+    assert len(result.screenshots) == 2
+    assert all(step.status == LayerStatus.PASSED for step in result.steps)
+
+
+def test_build_action_messages_include_configured_ui() -> None:
+    messages = build_action_messages(
+        instruction="verify title",
+        screenshot_data_url="data:image/png;base64,abc",
+        a11y_summary="session=x11",
+        history=[],
+        ui_base_url=UI_BASE_URL,
+        smoke_route="/",
+    )
+    user = messages[1]
+    content = user["content"]
+    assert isinstance(content, list)
+    text = next(part["text"] for part in content if part.get("type") == "text")
+    assert "canonical_url: http://localhost:3000/" in text
+
+
+def test_png_dimensions_from_header() -> None:
+    from finalstrike.computer_use.platform.screenshot import _png_dimensions
+
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+        + (120).to_bytes(4, "big")
+        + (80).to_bytes(4, "big")
+        + b"\x00" * 100
+    )
+    assert _png_dimensions(png) == (120, 80)
 
 
 def test_detect_session_type_returns_enum() -> None:
