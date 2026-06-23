@@ -28,7 +28,7 @@ secrets:
 tests:
   commands:
   - name: unit
-    run: python -c "import sample_app.server"
+    run: pytest -q
 ui:
   base_url: http://localhost:3000
   browser: chromium

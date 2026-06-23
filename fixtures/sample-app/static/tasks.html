@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample App — Tasks</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --text: #111111;
+      --border: #333333;
+      --accent: #0047ab;
+      --accent-hover: #003380;
+      --success-bg: #e6f4ea;
+      --success-text: #0d652d;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    nav {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.125rem;
+    }
+    nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      margin-right: 1rem;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+    .actions {
+      margin: 1.25rem 0;
+    }
+    button,
+    .btn {
+      font-size: 1.125rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      background: #f5f5f5;
+      color: var(--text);
+    }
+    button.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    button.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #task-form {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      max-width: 40rem;
+    }
+    #task-form.hidden {
+      display: none;
+    }
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      font-size: 1.05rem;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      font-size: 1.05rem;
+      padding: 0.6rem 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin-bottom: 1rem;
+    }
+    textarea {
+      min-height: 5rem;
+      resize: vertical;
+    }
+    #status-message {
+      min-height: 1.5rem;
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    #status-message:empty {
+      display: none;
+    }
+    #status-message.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 2px solid var(--success-text);
+    }
+    #status-message.error {
+      background: #fce8e6;
+      color: #b3261e;
+      border: 2px solid #b3261e;
+    }
+    #task-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+      max-width: 40rem;
+    }
+    #task-list li {
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    #task-list .empty {
+      font-weight: 400;
+      color: #444444;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/tasks.html" aria-current="page">Tasks</a>
+  </nav>
+
+  <h1>Tasks</h1>
+
+  <div class="actions">
+    <button type="button" id="new-task-btn" class="primary">New Task</button>
+  </div>
+
+  <div id="status-message" role="status" aria-live="polite"></div>
+
+  <form id="task-form" class="hidden" aria-label="Create task">
+    <label for="task-title">Title</label>
+    <input type="text" id="task-title" name="title" required autocomplete="off">
+
+    <label for="task-description">Description</label>
+    <textarea id="task-description" name="description" rows="4"></textarea>
+
+    <button type="submit" class="primary">Save Task</button>
+    <button type="button" id="cancel-btn">Cancel</button>
+  </form>
+
+  <h2>Task list</h2>
+  <ul id="task-list" aria-label="Task list">
+    <li class="empty">Loading tasks…</li>
+  </ul>
+
+  <script>
+    const API_BASE = "http://localhost:8080";
+
+    const newTaskBtn = document.getElementById("new-task-btn");
+    const taskForm = document.getElementById("task-form");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const statusMessage = document.getElementById("status-message");
+    const taskList = document.getElementById("task-list");
+    const titleInput = document.getElementById("task-title");
+    const descriptionInput = document.getElementById("task-description");
+
+    function setStatus(message, type) {
+      statusMessage.textContent = message;
+      statusMessage.className = type || "";
+    }
+
+    function clearStatus() {
+      statusMessage.textContent = "";
+      statusMessage.className = "";
+    }
+
+    function showForm() {
+      clearStatus();
+      taskForm.classList.remove("hidden");
+      titleInput.focus();
+    }
+
+    function hideForm() {
+      taskForm.classList.add("hidden");
+      taskForm.reset();
+    }
+
+    function renderTasks(tasks) {
+      taskList.innerHTML = "";
+      if (!tasks.length) {
+        const item = document.createElement("li");
+        item.className = "empty";
+        item.textContent = "No tasks yet. Click New Task to add one.";
+        taskList.appendChild(item);
+        return;
+      }
+      for (const task of tasks) {
+        const item = document.createElement("li");
+        item.textContent = task.title;
+        item.dataset.taskId = String(task.id);
+        taskList.appendChild(item);
+      }
+    }
+
+    async function loadTasks() {
+      try {
+        const response = await fetch(API_BASE + "/api/tasks");
+        if (!response.ok) {
+          throw new Error("Failed to load tasks (" + response.status + ")");
+        }
+        const tasks = await response.json();
+        renderTasks(tasks);
+      } catch (err) {
+        taskList.innerHTML = "";
+        const item = document.createElement("li");
+        item.className = "empty";
+        item.textContent = "Could not load tasks. Is the API running on port 8080?";
+        taskList.appendChild(item);
+        setStatus(err.message, "error");
+      }
+    }
+
+    async function saveTask(event) {
+      event.preventDefault();
+      clearStatus();
+
+      const title = titleInput.value.trim();
+      const description = descriptionInput.value.trim();
+
+      if (!title) {
+        setStatus("Title is required.", "error");
+        titleInput.focus();
+        return;
+      }
+
+      const saveBtn = taskForm.querySelector('button[type="submit"]');
+      saveBtn.disabled = true;
+
+      try {
+        const response = await fetch(API_BASE + "/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title, description: description }),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => ({}));
+          throw new Error(errorBody.error || "Save failed (" + response.status + ")");
+        }
+
+        const created = await response.json();
+        hideForm();
+        setStatus('Task "' + created.title + '" saved successfully.', "success");
+        await loadTasks();
+      } catch (err) {
+        setStatus(err.message, "error");
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    newTaskBtn.addEventListener("click", showForm);
+    cancelBtn.addEventListener("click", hideForm);
+    taskForm.addEventListener("submit", saveTask);
+
+    loadTasks();
+  </script>
+</body>
+</html>
