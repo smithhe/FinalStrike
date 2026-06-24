@@ -43,8 +43,11 @@ FINALSTRIKE_RECORD_LLM=1 pytest -m requires_live_llm \
   tests/test_p5_planner_live.py::test_record_full_planner_cassette -q
 ```
 
-Live tests assert **structure** (acceptance + `capabilities.yaml` coverage), not
-bitwise equality with canonical plans. Computer-use action cassettes live under
+Live tests assert the planner returns a **valid multi-layer plan** for the
+configured endpoint. Scoped capability checks use only items referenced in the
+acceptance file under test (same as smoke). **Exhaustive** acceptance and
+`capabilities.yaml` coverage is enforced by committed cassettes in default
+`pytest -q`, not by live LLM runs. Computer-use action cassettes live under
 `tests/llm_recordings/computer_use/` with the same replay pattern.
 
 ## Computer-use (P6)
