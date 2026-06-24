@@ -247,3 +247,37 @@ def test_delete_task(api_server: str) -> None:
 def test_delete_missing_task_returns_404(api_server: str) -> None:
     status = _delete(f"{api_server}/api/tasks/999")
     assert status == 404
+
+
+def test_get_task_by_id(api_server: str) -> None:
+    _, created = _post_json(f"{api_server}/api/tasks", {"title": "Detail me", "description": "Full text"})
+    status, raw = _get(f"{api_server}/api/tasks/{created['id']}")
+    task = json.loads(raw.decode("utf-8"))
+    assert status == 200
+    assert task["title"] == "Detail me"
+    assert task["description"] == "Full text"
+
+
+def test_get_missing_task_returns_404(api_server: str) -> None:
+    with pytest.raises(HTTPError) as exc_info:
+        _get(f"{api_server}/api/tasks/999")
+    assert exc_info.value.code == 404
+
+
+def test_serves_task_detail_page(api_server: str) -> None:
+    _, created = _post_json(f"{api_server}/api/tasks", {"title": "View me", "description": "Body"})
+    status, body = _get(f"{api_server}/tasks/{created['id']}")
+    assert status == 200
+    assert b"Sample App - Task Detail" in body
+    assert b"task-detail-description" in body
+    assert b"Back to Tasks" in body
+
+
+def test_home_dashboard_markup(api_server: str) -> None:
+    status, body = _get(f"{api_server}/")
+    assert status == 200
+    assert b"task-dashboard" in body
+    assert b"stat-total" in body
+    assert b"stat-active" in body
+    assert b"stat-done" in body
+    assert b"recent-tasks-list" in body

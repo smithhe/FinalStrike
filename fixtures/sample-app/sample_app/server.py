@@ -15,6 +15,7 @@ STATIC_ROOT = Path(__file__).resolve().parent.parent / "static"
 
 _SAFE_SEGMENT_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 _TASK_ID_RE = re.compile(r"^/api/tasks/(\d+)$")
+_TASK_DETAIL_UI_RE = re.compile(r"^/tasks/(\d+)$")
 _CORS_METHODS = "GET, POST, PATCH, DELETE, OPTIONS"
 _STATIC_CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -191,10 +192,34 @@ class HealthHandler(BaseHTTPRequestHandler):
             _json_response(self, 200, _list_tasks())
             return
 
+        task_id = _parse_task_id(path)
+        if task_id is not None:
+            task = _get_task(task_id)
+            if task is None:
+                _json_response(self, 404, {"error": "Task not found"})
+            else:
+                _json_response(self, 200, task)
+            return
+
         if path == "/tasks":
             self.send_response(301)
             self.send_header("Location", "/tasks/")
             self.end_headers()
+            return
+
+        detail_match = _TASK_DETAIL_UI_RE.match(path)
+        if detail_match is not None:
+            detail_page = STATIC_ROOT / "tasks" / "detail.html"
+            if not detail_page.is_file():
+                self.send_response(404)
+                self.end_headers()
+                return
+            body = detail_page.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", _static_content_type(detail_page))
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
             return
 
         static_path = resolve_static_path(path)
@@ -325,6 +350,7 @@ def main() -> None:
     )
     print(f"  UI home:  http://localhost:{port}/", flush=True)
     print(f"  UI tasks: http://localhost:{port}/tasks/", flush=True)
+    print(f"  UI detail: http://localhost:{port}/tasks/<id>", flush=True)
     server.serve_forever()
 
 

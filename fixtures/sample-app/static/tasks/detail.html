@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample App - Task Detail</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --text: #111111;
+      --border: #333333;
+      --accent: #0047ab;
+      --muted: #444444;
+      --success-bg: #e6f4ea;
+      --success-text: #0d652d;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --text: #f2f2f2;
+      --border: #888888;
+      --accent: #6ba3ff;
+      --muted: #bbbbbb;
+      --success-bg: #1e3a29;
+      --success-text: #81c995;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1.5rem;
+      line-height: 1.5;
+      max-width: 40rem;
+    }
+    nav {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.125rem;
+    }
+    nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      margin-right: 1rem;
+    }
+    nav a:hover { text-decoration: underline; }
+    h1 { margin-top: 0; font-size: 2rem; word-break: break-word; }
+    .meta {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-text);
+    }
+    #task-description {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      min-height: 4rem;
+      white-space: pre-wrap;
+    }
+    #status-message.error {
+      color: #b3261e;
+      font-weight: 600;
+      margin: 1rem 0;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/tasks/">Tasks</a>
+    <a href="/settings/">Settings</a>
+  </nav>
+
+  <p class="meta" id="task-meta" data-testid="task-detail-meta">Loading task…</p>
+  <h1 id="task-title" data-testid="task-detail-title">Task</h1>
+  <p id="task-status" data-testid="task-detail-status"></p>
+
+  <h2>Description</h2>
+  <div id="task-description" data-testid="task-detail-description"></div>
+
+  <p id="status-message" role="status"></p>
+  <a class="back-link" href="/tasks/" data-testid="back-to-tasks-link">Back to Tasks</a>
+
+  <script>
+    const SETTINGS_KEY = "sample-app-settings";
+
+    function applyThemeFromSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+        if (settings.theme === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (_err) { /* ignore */ }
+    }
+
+    function taskIdFromPath() {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      return parts[parts.length - 1];
+    }
+
+    async function loadTaskDetail() {
+      const taskId = taskIdFromPath();
+      const statusEl = document.getElementById("status-message");
+      if (!/^\d+$/.test(taskId)) {
+        statusEl.textContent = "Invalid task id in URL.";
+        statusEl.className = "error";
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/tasks/" + taskId);
+        if (!response.ok) {
+          throw new Error("Task not found");
+        }
+        const task = await response.json();
+        document.title = "Sample App - Task Detail";
+        document.getElementById("task-meta").textContent = "Task #" + task.id;
+        document.getElementById("task-title").textContent = task.title;
+        document.getElementById("task-status").innerHTML = task.completed
+          ? '<span class="badge" data-testid="task-done-badge">Done</span>'
+          : '<span class="meta">Active</span>';
+        document.getElementById("task-description").textContent =
+          task.description || "(No description)";
+      } catch (_err) {
+        statusEl.textContent = "Could not load task #" + taskId + ".";
+        statusEl.className = "error";
+      }
+    }
+
+    applyThemeFromSettings();
+    loadTaskDetail();
+  </script>
+</body>
+</html>
