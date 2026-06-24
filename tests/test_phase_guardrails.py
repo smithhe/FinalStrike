@@ -79,6 +79,7 @@ def test_doctor_cli_fixture_repo() -> None:
     )
     assert result.exit_code == 0
     assert "Fixture planned work" in result.output
+    assert "Fixture tasks UI" in result.output
 
 
 def test_capabilities_planned_not_duplicated_in_implemented() -> None:

@@ -195,7 +195,7 @@ def _fixture_checks(repo: Path) -> list[DoctorCheck]:
                 status=CheckStatus.WARN,
                 detail=(
                     f"{planned_count} planned item(s) in capabilities.yaml "
-                    "(acceptance-full.md not fully implemented)"
+                    "(Tier 2+ not yet built)"
                 ),
                 phase=6,
             )
@@ -206,6 +206,36 @@ def _fixture_checks(repo: Path) -> list[DoctorCheck]:
                 name="Fixture planned work",
                 status=CheckStatus.OK,
                 detail="No planned capabilities remain",
+            )
+        )
+
+    tasks_ui = repo / "static" / "tasks" / "index.html"
+    server_py = repo / "sample_app" / "server.py"
+    has_unified_server = (
+        server_py.is_file()
+        and "resolve_static_path" in server_py.read_text(encoding="utf-8")
+    )
+    if tasks_ui.is_file() and has_unified_server:
+        checks.append(
+            DoctorCheck(
+                name="Fixture tasks UI",
+                status=CheckStatus.OK,
+                detail="static/tasks/index.html present; server serves UI on port 8080",
+                phase=6,
+            )
+        )
+    else:
+        missing_bits: list[str] = []
+        if not tasks_ui.is_file():
+            missing_bits.append("static/tasks/index.html")
+        if not has_unified_server:
+            missing_bits.append("unified server (pull latest sample-app branch)")
+        checks.append(
+            DoctorCheck(
+                name="Fixture tasks UI",
+                status=CheckStatus.FAIL,
+                detail="Missing " + ", ".join(missing_bits),
+                phase=6,
             )
         )
 

@@ -174,6 +174,25 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    required_static = [
+        STATIC_ROOT / "index.html",
+        STATIC_ROOT / "tasks" / "index.html",
+    ]
+    missing = [path for path in required_static if not path.is_file()]
+    if missing:
+        print(
+            "sample-app server cannot start: missing static frontend files:",
+            file=sys.stderr,
+        )
+        for path in missing:
+            print(f"  - {path}", file=sys.stderr)
+        print(
+            "\nPull the latest cursor/sample-app-task-list branch. "
+            "The unified server requires static/tasks/index.html.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     server = HTTPServer(("0.0.0.0", port), HealthHandler)
     print(
@@ -181,6 +200,8 @@ def main() -> None:
         f"(API + static frontend)",
         flush=True,
     )
+    print(f"  UI home:  http://localhost:{port}/", flush=True)
+    print(f"  UI tasks: http://localhost:{port}/tasks/", flush=True)
     server.serve_forever()
 
 
