@@ -47,6 +47,11 @@ def test_full_acceptance_documents_task_criteria() -> None:
     assert "DELETE /api/tasks" in full
     assert "Mark Done" in full
     assert "Confirm Delete" in full
+    assert "http://localhost:8080/settings/" in full
+    assert "Sample App - Settings" in full
+    assert "Search tasks" in full or "search box" in full.lower()
+    assert "Import Tasks" in full
+    assert "Confirm Import" in full
     assert "http://localhost:8080/tasks/" in full
     assert "Sample App - Tasks" in full
 

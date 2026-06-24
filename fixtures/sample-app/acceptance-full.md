@@ -1,5 +1,5 @@
-> **Fixture status:** Tier 1–2 implemented (create, complete, delete). Tier 3
-> interactions (search, settings, wizard) remain planned in `capabilities.yaml`.
+> **Fixture status:** Tier 1–3 implemented. Task detail view remains planned in
+> `capabilities.yaml`.
 
 ## Feature: Task list (Tier 1)
 
@@ -23,3 +23,14 @@
 - User can click "Load Demo Tasks" to seed 15 tasks and scroll the task list
 - API returns 200 on PATCH /api/tasks/{id} with JSON body `{"completed": true}` or `{"completed": false}`
 - API returns 204 on DELETE /api/tasks/{id}
+
+## Feature: Advanced interactions (Tier 3)
+
+### Acceptance Criteria
+
+- Settings page loads at http://localhost:8080/settings/ with page title "Sample App - Settings"
+- User can choose Light or Dark theme and click "Save Settings" to see "Settings saved."
+- User can choose a default sort order (Newest first, Oldest first, Title A-Z) on Settings
+- Tasks page search box filters the visible list as the user types
+- User can click "Import Tasks", paste titles (one per line), click Next, review preview, and Confirm Import
+- Imported tasks appear in the task list via POST /api/tasks

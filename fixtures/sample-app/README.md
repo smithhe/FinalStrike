@@ -9,7 +9,7 @@ This placeholder app provides a tiny HTTP API and static frontend so later phase
 | File | When to use |
 |------|-------------|
 | `acceptance-smoke.md` | P0–P4 (matches current app) |
-| `acceptance-full.md` | P5+ task-list demo (Tier 1–2 implemented) |
+| `acceptance-full.md` | P5+ task-list demo (Tier 1–3 implemented) |
 | `acceptance.md` | Index of the two files above |
 
 `capabilities.yaml` lists implemented vs planned behavior. Update it when extending the fixture.

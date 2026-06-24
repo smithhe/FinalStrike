@@ -109,6 +109,17 @@ def test_serves_tasks_page(api_server: str) -> None:
     assert b"New Task" in body
     assert b"Load Demo Tasks" in body
     assert b"Confirm Delete" in body
+    assert b"Search tasks" in body
+    assert b"Import Tasks" in body
+    assert b"Confirm Import" in body
+
+
+def test_serves_settings_page(api_server: str) -> None:
+    status, body = _get(f"{api_server}/settings/")
+    assert status == 200
+    assert b"Sample App - Settings" in body
+    assert b"Save Settings" in body
+    assert b"Default sort order" in body
 
 
 def test_tasks_path_redirects_to_trailing_slash(api_server: str) -> None:

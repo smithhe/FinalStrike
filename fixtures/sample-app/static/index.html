@@ -10,10 +10,18 @@
       --text: #111111;
       --border: #333333;
       --accent: #0047ab;
+      --bg: #ffffff;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --text: #f2f2f2;
+      --border: #888888;
+      --accent: #6ba3ff;
+      --bg: #121212;
     }
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      background: #ffffff;
+      background: var(--bg);
       color: var(--text);
       margin: 0;
       padding: 1.5rem;
@@ -31,23 +39,28 @@
       text-decoration: none;
       margin-right: 1rem;
     }
-    nav a:hover {
-      text-decoration: underline;
-    }
-    h1 {
-      margin-top: 0;
-      font-size: 2rem;
-    }
+    nav a:hover { text-decoration: underline; }
+    h1 { margin-top: 0; font-size: 2rem; }
   </style>
 </head>
 <body>
   <nav aria-label="Main navigation">
     <a href="/" aria-current="page">Home</a>
     <a href="/tasks/">Tasks</a>
+    <a href="/settings/">Settings</a>
   </nav>
 
   <h1>Sample App</h1>
   <p>FinalStrike fixture frontend placeholder.</p>
   <p><a href="/tasks/">Go to Tasks</a></p>
+
+  <script>
+    try {
+      const settings = JSON.parse(localStorage.getItem("sample-app-settings") || "{}");
+      if (settings.theme === "dark") {
+        document.documentElement.dataset.theme = "dark";
+      }
+    } catch (_err) { /* ignore */ }
+  </script>
 </body>
 </html>

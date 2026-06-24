@@ -18,6 +18,17 @@
       --success-text: #0d652d;
       --muted: #444444;
     }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --text: #f2f2f2;
+      --border: #888888;
+      --accent: #6ba3ff;
+      --accent-hover: #4d8fef;
+      --muted: #bbbbbb;
+      --success-bg: #1e3a29;
+      --success-text: #81c995;
+    }
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
@@ -69,6 +80,37 @@
     }
     button.danger:hover { background: var(--danger-hover); border-color: var(--danger-hover); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #search-section {
+      max-width: 40rem;
+      margin: 1rem 0;
+    }
+    #search-tasks {
+      margin-bottom: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .panel {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      max-width: 40rem;
+      background: var(--bg);
+    }
+    .panel.hidden { display: none; }
+    .panel h2 { margin-top: 0; font-size: 1.35rem; }
+    .wizard-step.hidden { display: none; }
+    .wizard-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    #import-preview {
+      list-style: disc;
+      padding-left: 1.5rem;
+      margin: 0.75rem 0;
+    }
     #task-form {
       border: 2px solid var(--border);
       border-radius: 8px;
@@ -183,7 +225,8 @@
     }
     .modal.hidden { display: none; }
     .modal-content {
-      background: #ffffff;
+      background: var(--bg);
+      color: var(--text);
       border: 3px solid var(--border);
       border-radius: 10px;
       padding: 1.5rem;
@@ -202,13 +245,20 @@
   <nav aria-label="Main navigation">
     <a href="/">Home</a>
     <a href="/tasks/" aria-current="page">Tasks</a>
+    <a href="/settings/">Settings</a>
   </nav>
 
   <h1>Tasks</h1>
 
   <div class="actions">
     <button type="button" id="new-task-btn" class="primary" data-testid="new-task-btn">New Task</button>
+    <button type="button" id="import-tasks-btn" data-testid="import-tasks-btn">Import Tasks</button>
     <button type="button" id="demo-tasks-btn" data-testid="load-demo-tasks-btn">Load Demo Tasks</button>
+  </div>
+
+  <div id="search-section">
+    <label for="search-tasks">Search tasks</label>
+    <input type="text" id="search-tasks" placeholder="Type to filter by title" autocomplete="off" data-testid="search-tasks-input">
   </div>
 
   <div id="status-message" role="status" aria-live="polite"></div>
@@ -221,6 +271,34 @@
     <button type="submit" class="primary" data-testid="save-task-btn">Save Task</button>
     <button type="button" id="cancel-btn" data-testid="cancel-task-btn">Cancel</button>
   </form>
+
+  <div id="import-wizard" class="panel hidden" data-testid="import-wizard">
+    <h2>Import tasks</h2>
+    <div class="wizard-step" data-step="1" data-testid="import-step-1">
+      <p>Paste one task title per line.</p>
+      <label for="import-text">Task titles</label>
+      <textarea id="import-text" rows="6" data-testid="import-text"></textarea>
+      <div class="wizard-actions">
+        <button type="button" id="import-cancel-btn">Cancel</button>
+        <button type="button" id="import-next-1-btn" class="primary" data-testid="import-next-btn">Next</button>
+      </div>
+    </div>
+    <div class="wizard-step hidden" data-step="2" data-testid="import-step-2">
+      <p>Preview tasks to import:</p>
+      <ul id="import-preview" data-testid="import-preview"></ul>
+      <div class="wizard-actions">
+        <button type="button" id="import-back-2-btn" data-testid="import-back-btn">Back</button>
+        <button type="button" id="import-next-2-btn" class="primary">Next</button>
+      </div>
+    </div>
+    <div class="wizard-step hidden" data-step="3" data-testid="import-step-3">
+      <p id="import-confirm-message"></p>
+      <div class="wizard-actions">
+        <button type="button" id="import-back-3-btn">Back</button>
+        <button type="button" id="import-confirm-btn" class="primary" data-testid="import-confirm-btn">Confirm Import</button>
+      </div>
+    </div>
+  </div>
 
   <h2>Task list</h2>
   <ul id="task-list" aria-label="Task list" data-testid="task-list" data-ready="false">
@@ -240,8 +318,10 @@
 
   <script>
     const API_BASE = "";
+    const SETTINGS_KEY = "sample-app-settings";
 
     const newTaskBtn = document.getElementById("new-task-btn");
+    const importTasksBtn = document.getElementById("import-tasks-btn");
     const demoTasksBtn = document.getElementById("demo-tasks-btn");
     const taskForm = document.getElementById("task-form");
     const cancelBtn = document.getElementById("cancel-btn");
@@ -249,12 +329,60 @@
     const taskList = document.getElementById("task-list");
     const titleInput = document.getElementById("task-title");
     const descriptionInput = document.getElementById("task-description");
+    const searchInput = document.getElementById("search-tasks");
     const deleteModal = document.getElementById("delete-modal");
     const deleteModalMessage = document.getElementById("delete-modal-message");
     const deleteCancelBtn = document.getElementById("delete-cancel-btn");
     const deleteConfirmBtn = document.getElementById("delete-confirm-btn");
+    const importWizard = document.getElementById("import-wizard");
+    const importText = document.getElementById("import-text");
+    const importPreview = document.getElementById("import-preview");
+    const importConfirmMessage = document.getElementById("import-confirm-message");
 
     let pendingDeleteTask = null;
+    let allTasks = [];
+    let importTitles = [];
+
+    function readSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      } catch (_err) {
+        return {};
+      }
+    }
+
+    function applyThemeFromSettings() {
+      const settings = readSettings();
+      document.documentElement.dataset.theme = settings.theme === "dark" ? "dark" : "light";
+    }
+
+    function sortTasks(tasks) {
+      const sort = readSettings().sort || "newest";
+      const copy = tasks.slice();
+      if (sort === "oldest") {
+        copy.sort(function (a, b) { return a.id - b.id; });
+      } else if (sort === "title") {
+        copy.sort(function (a, b) {
+          return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+        });
+      } else {
+        copy.sort(function (a, b) { return b.id - a.id; });
+      }
+      return copy;
+    }
+
+    function filteredTasks() {
+      const query = searchInput.value.trim().toLowerCase();
+      const sorted = sortTasks(allTasks);
+      if (!query) return sorted;
+      return sorted.filter(function (task) {
+        return task.title.toLowerCase().includes(query);
+      });
+    }
+
+    function refreshTaskList() {
+      renderTasks(filteredTasks());
+    }
 
     function setStatus(message, type) {
       statusMessage.textContent = message;
@@ -289,12 +417,41 @@
       deleteModal.classList.add("hidden");
     }
 
+    function showImportWizard() {
+      clearStatus();
+      importTitles = [];
+      importText.value = "";
+      importWizard.classList.remove("hidden");
+      showImportStep(1);
+      importText.focus();
+    }
+
+    function hideImportWizard() {
+      importWizard.classList.add("hidden");
+      importTitles = [];
+    }
+
+    function showImportStep(step) {
+      importWizard.querySelectorAll(".wizard-step").forEach(function (panel) {
+        panel.classList.toggle("hidden", Number(panel.dataset.step) !== step);
+      });
+    }
+
+    function parseImportTitles() {
+      return importText.value
+        .split("\n")
+        .map(function (line) { return line.trim(); })
+        .filter(function (line) { return line.length > 0; });
+    }
+
     function renderTasks(tasks) {
       taskList.innerHTML = "";
       if (!tasks.length) {
         const item = document.createElement("li");
         item.className = "empty";
-        item.textContent = "No tasks yet. Click New Task to add one.";
+        item.textContent = allTasks.length
+          ? "No tasks match your search."
+          : "No tasks yet. Click New Task to add one.";
         taskList.appendChild(item);
         taskList.dataset.ready = "true";
         return;
@@ -355,7 +512,8 @@
         if (!response.ok) {
           throw new Error("Failed to load tasks (" + response.status + ")");
         }
-        renderTasks(await response.json());
+        allTasks = await response.json();
+        refreshTaskList();
       } catch (err) {
         taskList.innerHTML = "";
         const item = document.createElement("li");
@@ -469,12 +627,67 @@
       }
     }
 
+    async function confirmImport() {
+      clearStatus();
+      const confirmBtn = document.getElementById("import-confirm-btn");
+      confirmBtn.disabled = true;
+      try {
+        for (const title of importTitles) {
+          const response = await fetch(API_BASE + "/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: title, description: "Imported via wizard" }),
+          });
+          if (!response.ok) {
+            throw new Error('Failed to import "' + title + '"');
+          }
+        }
+        hideImportWizard();
+        setStatus("Imported " + importTitles.length + " task(s).", "success");
+        await loadTasks();
+      } catch (err) {
+        setStatus(err.message, "error");
+      } finally {
+        confirmBtn.disabled = false;
+      }
+    }
+
     newTaskBtn.addEventListener("click", showForm);
+    importTasksBtn.addEventListener("click", showImportWizard);
     demoTasksBtn.addEventListener("click", loadDemoTasks);
     cancelBtn.addEventListener("click", hideForm);
     taskForm.addEventListener("submit", saveTask);
+    searchInput.addEventListener("input", refreshTaskList);
     deleteCancelBtn.addEventListener("click", hideDeleteModal);
     deleteConfirmBtn.addEventListener("click", confirmDelete);
+
+    document.getElementById("import-cancel-btn").addEventListener("click", hideImportWizard);
+    document.getElementById("import-next-1-btn").addEventListener("click", function () {
+      importTitles = parseImportTitles();
+      if (!importTitles.length) {
+        setStatus("Enter at least one task title to import.", "error");
+        return;
+      }
+      importPreview.innerHTML = "";
+      for (const title of importTitles) {
+        const item = document.createElement("li");
+        item.textContent = title;
+        importPreview.appendChild(item);
+      }
+      showImportStep(2);
+    });
+    document.getElementById("import-back-2-btn").addEventListener("click", function () {
+      showImportStep(1);
+    });
+    document.getElementById("import-next-2-btn").addEventListener("click", function () {
+      importConfirmMessage.textContent =
+        "Import " + importTitles.length + " task(s) into your list?";
+      showImportStep(3);
+    });
+    document.getElementById("import-back-3-btn").addEventListener("click", function () {
+      showImportStep(2);
+    });
+    document.getElementById("import-confirm-btn").addEventListener("click", confirmImport);
 
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape" && !deleteModal.classList.contains("hidden")) {
@@ -482,6 +695,7 @@
       }
     });
 
+    applyThemeFromSettings();
     loadTasks();
   </script>
 </body>

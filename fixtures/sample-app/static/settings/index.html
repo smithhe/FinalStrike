@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample App - Settings</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --text: #111111;
+      --border: #333333;
+      --accent: #0047ab;
+      --accent-hover: #003380;
+      --success-bg: #e6f4ea;
+      --success-text: #0d652d;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --text: #f2f2f2;
+      --border: #888888;
+      --accent: #6ba3ff;
+      --accent-hover: #4d8fef;
+      --success-bg: #1e3a29;
+      --success-text: #81c995;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    nav {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.125rem;
+    }
+    nav a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      margin-right: 1rem;
+    }
+    nav a:hover { text-decoration: underline; }
+    h1 { margin-top: 0; font-size: 2rem; }
+    fieldset {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      max-width: 40rem;
+    }
+    legend { font-weight: 700; font-size: 1.1rem; padding: 0 0.5rem; }
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 0.75rem 0 0.35rem;
+      font-size: 1.05rem;
+    }
+    .radio-row, .select-row { margin-bottom: 0.75rem; }
+    .radio-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+      cursor: pointer;
+    }
+    input[type="radio"] { width: 1.25rem; height: 1.25rem; }
+    select {
+      font-size: 1.1rem;
+      padding: 0.6rem 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      min-width: 16rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button {
+      font-size: 1.125rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      margin-top: 0.5rem;
+    }
+    button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    #status-message {
+      min-height: 1.5rem;
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      max-width: 40rem;
+    }
+    #status-message:empty { display: none; }
+    #status-message.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 2px solid var(--success-text);
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/tasks/">Tasks</a>
+    <a href="/settings/" aria-current="page">Settings</a>
+  </nav>
+
+  <h1>Settings</h1>
+
+  <form id="settings-form" aria-label="App settings" data-testid="settings-form">
+    <fieldset>
+      <legend>Theme</legend>
+      <div class="radio-row">
+        <label><input type="radio" name="theme" value="light" data-testid="theme-light"> Light theme</label>
+        <label><input type="radio" name="theme" value="dark" data-testid="theme-dark"> Dark theme</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Task list</legend>
+      <div class="select-row">
+        <label for="sort-order">Default sort order</label>
+        <select id="sort-order" name="sort" data-testid="sort-order-select">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="title">Title A-Z</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <button type="submit" data-testid="save-settings-btn">Save Settings</button>
+  </form>
+
+  <div id="status-message" role="status" aria-live="polite"></div>
+
+  <script>
+    const SETTINGS_KEY = "sample-app-settings";
+
+    function readSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      } catch (_err) {
+        return {};
+      }
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+    }
+
+    function writeSettings(settings) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function loadForm() {
+      const settings = readSettings();
+      const theme = settings.theme === "dark" ? "dark" : "light";
+      const sort = settings.sort || "newest";
+      document.querySelector('input[name="theme"][value="' + theme + '"]').checked = true;
+      document.getElementById("sort-order").value = sort;
+      applyTheme(theme);
+    }
+
+    document.getElementById("settings-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const theme = document.querySelector('input[name="theme"]:checked').value;
+      const sort = document.getElementById("sort-order").value;
+      writeSettings({ theme: theme, sort: sort });
+      applyTheme(theme);
+      const status = document.getElementById("status-message");
+      status.textContent = "Settings saved.";
+      status.className = "success";
+    });
+
+    loadForm();
+  </script>
+</body>
+</html>

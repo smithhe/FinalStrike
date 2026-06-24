@@ -26,21 +26,22 @@ implemented:
       title: Sample App
     - route: /tasks
       title: Sample App - Tasks
+    - route: /settings
+      title: Sample App - Settings
     - action: create_task
       description: Fill title and description, save, see task in list
     - action: complete_task
       description: Toggle task complete status on the Tasks page
     - action: delete_task
       description: Delete task with confirmation modal
+    - action: search_tasks
+      description: Filter the task list with a search box
+    - action: import_wizard
+      description: Multi-step wizard to import tasks from pasted text
   terminal:
     - command: pytest -q
 
 planned:
   ui:
-    - action: search_tasks
-      description: Filter the task list with a search box
-    - route: /settings
-      title: Sample App - Settings
-      description: Settings page with theme and sort options
-    - action: import_wizard
-      description: Multi-step wizard to import tasks from pasted text
+    - route: /tasks/{id}
+      description: Read-only task detail page with full description
