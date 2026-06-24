@@ -11,6 +11,8 @@
       --border: #333333;
       --accent: #0047ab;
       --bg: #ffffff;
+      --card: #f5f5f5;
+      --muted: #444444;
     }
     html[data-theme="dark"] {
       color-scheme: dark;
@@ -18,6 +20,8 @@
       --border: #888888;
       --accent: #6ba3ff;
       --bg: #121212;
+      --card: #1e1e1e;
+      --muted: #bbbbbb;
     }
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -26,6 +30,7 @@
       margin: 0;
       padding: 1.5rem;
       line-height: 1.5;
+      max-width: 40rem;
     }
     nav {
       border-bottom: 2px solid var(--border);
@@ -41,6 +46,50 @@
     }
     nav a:hover { text-decoration: underline; }
     h1 { margin-top: 0; font-size: 2rem; }
+    h2 { font-size: 1.35rem; margin-top: 1.5rem; }
+    #task-dashboard {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      background: var(--card);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 0.75rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .stats li {
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    .stats span {
+      display: block;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    #recent-tasks {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0;
+    }
+    #recent-tasks li {
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 0;
+    }
+    #recent-tasks a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    #recent-tasks a:hover { text-decoration: underline; }
+    .empty { color: var(--muted); font-style: italic; }
   </style>
 </head>
 <body>
@@ -51,7 +100,24 @@
   </nav>
 
   <h1>Sample App</h1>
-  <p>FinalStrike fixture frontend placeholder.</p>
+  <p>FinalStrike fixture frontend with live task dashboard.</p>
+
+  <section id="task-dashboard" data-testid="task-dashboard" aria-label="Task overview">
+    <h2>Task overview</h2>
+    <ul class="stats">
+      <li>Total <span id="stat-total" data-testid="stat-total">-</span></li>
+      <li>Active <span id="stat-active" data-testid="stat-active">-</span></li>
+      <li>Done <span id="stat-done" data-testid="stat-done">-</span></li>
+    </ul>
+  </section>
+
+  <section aria-label="Recent tasks">
+    <h2>Recent tasks</h2>
+    <ul id="recent-tasks" data-testid="recent-tasks-list">
+      <li class="empty">Loading…</li>
+    </ul>
+  </section>
+
   <p><a href="/tasks/">Go to Tasks</a></p>
 
   <script>
@@ -61,6 +127,48 @@
         document.documentElement.dataset.theme = "dark";
       }
     } catch (_err) { /* ignore */ }
+
+    async function loadDashboard() {
+      const recentList = document.getElementById("recent-tasks");
+      try {
+        const response = await fetch("/api/tasks");
+        if (!response.ok) throw new Error("Failed to load tasks");
+        const tasks = await response.json();
+        const total = tasks.length;
+        const done = tasks.filter(function (t) { return t.completed; }).length;
+        const active = total - done;
+        document.getElementById("stat-total").textContent = String(total);
+        document.getElementById("stat-active").textContent = String(active);
+        document.getElementById("stat-done").textContent = String(done);
+
+        recentList.innerHTML = "";
+        if (!tasks.length) {
+          const item = document.createElement("li");
+          item.className = "empty";
+          item.textContent = "No tasks yet.";
+          recentList.appendChild(item);
+          return;
+        }
+        const recent = tasks.slice().sort(function (a, b) { return b.id - a.id; }).slice(0, 5);
+        for (const task of recent) {
+          const item = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = "/tasks/" + task.id;
+          link.textContent = task.title;
+          link.dataset.testid = "recent-task-link";
+          item.appendChild(link);
+          recentList.appendChild(item);
+        }
+      } catch (_err) {
+        recentList.innerHTML = "";
+        const item = document.createElement("li");
+        item.className = "empty";
+        item.textContent = "Could not load dashboard stats.";
+        recentList.appendChild(item);
+      }
+    }
+
+    loadDashboard();
   </script>
 </body>
 </html>

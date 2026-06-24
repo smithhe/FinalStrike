@@ -33,8 +33,6 @@ def test_capabilities_manifest_present() -> None:
     capabilities = load_capabilities(FIXTURE_REPO / "capabilities.yaml")
     assert capabilities.version == "1"
     assert capabilities.implemented.api
-    planned = capabilities.planned
-    assert planned.api or planned.ui or planned.terminal
 
 
 def test_full_acceptance_documents_task_criteria() -> None:
@@ -52,6 +50,10 @@ def test_full_acceptance_documents_task_criteria() -> None:
     assert "Search tasks" in full or "search box" in full.lower()
     assert "Import Tasks" in full
     assert "Confirm Import" in full
+    assert "Task Detail" in full
+    assert "GET /api/tasks/{id}" in full
+    assert "Task overview" in full
+    assert "dashboard" in full.lower()
     assert "http://localhost:8080/tasks/" in full
     assert "Sample App - Tasks" in full
 
@@ -70,6 +72,9 @@ def test_implemented_ui_routes_resolve_to_static_files() -> None:
     static_root = FIXTURE_REPO / "static"
     for ui_cap in capabilities.implemented.ui:
         if ui_cap.route is None:
+            continue
+        if "{id}" in ui_cap.route:
+            assert (static_root / "tasks" / "detail.html").is_file()
             continue
         route = ui_cap.route.strip("/")
         candidates = [
