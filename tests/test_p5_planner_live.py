@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from finalstrike.config.context import load_repo_context
+from finalstrike.fixture_capabilities import load_capabilities
 from finalstrike.planner.planner import generate_verification_plan
 from tests.conftest import (
     ACCEPTANCE_FILE,
