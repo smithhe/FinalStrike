@@ -1,4 +1,4 @@
-> **Fixture status:** Tier 1–3 implemented. Task detail view remains planned in
+> **Fixture status:** Tiers 1–5 implemented. No planned fixture work remains in
 > `capabilities.yaml`.
 
 ## Feature: Task list (Tier 1)
@@ -34,3 +34,19 @@
 - Tasks page search box filters the visible list as the user types
 - User can click "Import Tasks", paste titles (one per line), click Next, review preview, and Confirm Import
 - Imported tasks appear in the task list via POST /api/tasks
+
+## Feature: Task detail (Tier 4)
+
+### Acceptance Criteria
+
+- User can click a task title on the Tasks page to open http://localhost:8080/tasks/{id}
+- Task detail page shows page title "Sample App - Task Detail" with full title and description
+- API returns 200 on GET /api/tasks/{id} with the matching task JSON
+
+## Feature: Home dashboard (Tier 5)
+
+### Acceptance Criteria
+
+- Home page at http://localhost:8080/ shows a Task overview with total, active, and done counts
+- Recent tasks on the home page link to task detail pages
+- Dashboard counts match GET /api/tasks results

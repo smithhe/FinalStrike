@@ -10,10 +10,13 @@ Minimal API + static frontend used for FinalStrike integration testing.
 
 ## Routes
 
-- UI: `http://localhost:8080/` — landing page with title "Sample App"
-- UI: `http://localhost:8080/tasks/` — task list page with title "Sample App - Tasks"
+- UI: `http://localhost:8080/` — home dashboard with task stats (title "Sample App")
+- UI: `http://localhost:8080/tasks/` — task list (title "Sample App - Tasks")
+- UI: `http://localhost:8080/tasks/{id}` — task detail (title "Sample App - Task Detail")
+- UI: `http://localhost:8080/settings/` — settings (title "Sample App - Settings")
 - API: `http://localhost:8080/health`
-- API: `http://localhost:8080/api/tasks` — list tasks (`GET`) or create (`POST` JSON `{"title": "...", "description": "..."}`)
+- API: `http://localhost:8080/api/tasks` — list (`GET`) or create (`POST`)
+- API: `http://localhost:8080/api/tasks/{id}` — read (`GET`), update (`PATCH`), delete (`DELETE`)
 
 ## Computer-use (P6)
 
@@ -68,4 +71,4 @@ finalstrike doctor --repo .   # shows Local config overlay when present
 
 - No authentication (intentional for fixture simplicity)
 - No live third-party API integrations
-- Task detail view (`/tasks/{id}`) from `capabilities.yaml` is **planned**
+- No planned fixture work remains in `capabilities.yaml` (Tiers 1–5 complete)

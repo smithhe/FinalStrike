@@ -190,7 +190,10 @@
     .task-title {
       font-weight: 600;
       word-break: break-word;
+      color: var(--accent);
+      text-decoration: none;
     }
+    .task-title:hover { text-decoration: underline; }
     .task-title.completed {
       text-decoration: line-through;
       color: var(--muted);
@@ -465,9 +468,11 @@
         const titleWrap = document.createElement("div");
         titleWrap.className = "task-title-wrap";
 
-        const title = document.createElement("span");
+        const title = document.createElement("a");
         title.className = "task-title" + (task.completed ? " completed" : "");
+        title.href = "/tasks/" + task.id;
         title.textContent = task.title;
+        title.dataset.testid = "task-title-link";
         titleWrap.appendChild(title);
 
         if (task.completed) {
