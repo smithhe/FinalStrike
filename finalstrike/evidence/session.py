@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from finalstrike.config.context import RepoContext
-from finalstrike.config.models import RunArtifacts, RunLayers, RunResult, VerificationPlan
+from finalstrike.config.models import PlanGap, RunArtifacts, RunLayers, RunResult, VerificationPlan
 from finalstrike.evidence.gap_analyzer import merge_gaps
 from finalstrike.evidence.recorder import VideoRecorder
 from finalstrike.evidence.store import ArtifactStore
@@ -72,6 +72,18 @@ class EvidenceSession:
             layers=result.layers,
             requested_layers=requested_layers,
         )
+        if self.record_video and artifacts.video is None:
+            reason = (
+                self._recorder.error
+                if self._recorder is not None and self._recorder.error
+                else "desktop video recorder did not produce output"
+            )
+            gaps.append(
+                PlanGap(
+                    item="Desktop video recording",
+                    reason=reason,
+                )
+            )
 
         finalized = result.model_copy(
             update={

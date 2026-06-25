@@ -10,8 +10,6 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from finalstrike.computer_use.platform.session import SessionType, detect_session_type
-
 
 @dataclass
 class VideoRecorder:
@@ -23,6 +21,7 @@ class VideoRecorder:
     _backend: str | None = field(default=None, init=False, repr=False)
     _started_at: float | None = field(default=None, init=False, repr=False)
     _error: str | None = field(default=None, init=False, repr=False)
+    _stderr_log: Path | None = field(default=None, init=False, repr=False)
 
     @property
     def error(self) -> str | None:
@@ -50,15 +49,26 @@ class VideoRecorder:
             self._error = backend
             return False
 
+        stderr_log = self.output_path.parent / "logs" / "video-recorder.log"
+        stderr_log.parent.mkdir(parents=True, exist_ok=True)
+        self._stderr_log = stderr_log
+
         try:
+            stderr_handle = stderr_log.open("w", encoding="utf-8")
             self._process = subprocess.Popen(
                 command,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stderr=stderr_handle,
                 start_new_session=True,
             )
         except OSError as exc:
             self._error = str(exc)
+            self._process = None
+            return False
+
+        time.sleep(0.25)
+        if self._process.poll() is not None:
+            self._error = _read_recorder_failure(stderr_log, self._process.returncode)
             self._process = None
             return False
 
@@ -69,16 +79,14 @@ class VideoRecorder:
     def stop(self) -> Path | None:
         """Stop recording and return the output path when the file exists."""
         if self._process is None:
-            return self.output_path if self.output_path.is_file() else None
+            return self._valid_output_path()
 
         process = self._process
         self._process = None
         if process.poll() is None:
             _terminate_process(process)
 
-        if self.output_path.is_file() and self.output_path.stat().st_size > 0:
-            return self.output_path
-        return None
+        return self._valid_output_path()
 
     def __enter__(self) -> VideoRecorder:
         self.start()
@@ -87,6 +95,13 @@ class VideoRecorder:
     def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
         del exc_type, exc, tb
         self.stop()
+
+    def _valid_output_path(self) -> Path | None:
+        if self.output_path.is_file() and self.output_path.stat().st_size > 0:
+            return self.output_path
+        if self._error is None and self._stderr_log is not None:
+            self._error = _read_recorder_failure(self._stderr_log, None)
+        return None
 
 
 def _terminate_process(process: subprocess.Popen[bytes]) -> None:
@@ -103,33 +118,76 @@ def _terminate_process(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=5)
 
 
+def _read_recorder_failure(stderr_log: Path, exit_code: int | None) -> str:
+    detail = ""
+    if stderr_log.is_file():
+        detail = " ".join(stderr_log.read_text(encoding="utf-8").split())
+        if len(detail) > 200:
+            detail = detail[:197] + "..."
+    if detail:
+        return detail
+    if exit_code is not None:
+        return f"desktop recorder exited with code {exit_code}"
+    return "desktop recorder produced no video output"
+
+
+def _desktop_video_size() -> tuple[int, int]:
+    try:
+        import mss
+
+        with mss.MSS() as sct:
+            monitor = sct.monitors[0]
+            return int(monitor["width"]), int(monitor["height"])
+    except Exception:
+        return 1920, 1080
+
+
+def _ffmpeg_x11grab_command(
+    output_path: Path,
+    *,
+    display: str,
+    backend: str,
+) -> tuple[list[str], str]:
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        return [], backend
+    width, height = _desktop_video_size()
+    return (
+        [
+            ffmpeg,
+            "-y",
+            "-f",
+            "x11grab",
+            "-video_size",
+            f"{width}x{height}",
+            "-framerate",
+            "15",
+            "-i",
+            display,
+            "-c:v",
+            "libvpx-vp9",
+            "-b:v",
+            "1M",
+            str(output_path),
+        ],
+        backend,
+    )
+
+
 def _build_recorder_command(output_path: Path) -> tuple[list[str] | None, str]:
+    from finalstrike.computer_use.platform.session import SessionType, detect_session_type
+
     session = detect_session_type()
     if session == SessionType.X11:
-        ffmpeg = shutil.which("ffmpeg")
-        if ffmpeg is None:
-            return None, "ffmpeg not found on PATH"
         display = os.environ.get("DISPLAY", ":0")
-        return (
-            [
-                ffmpeg,
-                "-y",
-                "-f",
-                "x11grab",
-                "-video_size",
-                "1920x1080",
-                "-framerate",
-                "15",
-                "-i",
-                display,
-                "-c:v",
-                "libvpx-vp9",
-                "-b:v",
-                "1M",
-                str(output_path),
-            ],
-            "ffmpeg-x11grab",
+        command, _ = _ffmpeg_x11grab_command(
+            output_path,
+            display=display,
+            backend="ffmpeg-x11grab",
         )
+        if not command:
+            return None, "ffmpeg not found on PATH"
+        return command, "ffmpeg-x11grab"
 
     if session == SessionType.WAYLAND:
         wf_recorder = shutil.which("wf-recorder")
@@ -142,29 +200,27 @@ def _build_recorder_command(output_path: Path) -> tuple[list[str] | None, str]:
                 ],
                 "wf-recorder",
             )
-        return None, "wf-recorder not found on PATH for Wayland session"
-
-    ffmpeg = shutil.which("ffmpeg")
-    if ffmpeg is not None and os.environ.get("DISPLAY"):
-        display = os.environ["DISPLAY"]
-        return (
-            [
-                ffmpeg,
-                "-y",
-                "-f",
-                "x11grab",
-                "-video_size",
-                "1920x1080",
-                "-framerate",
-                "15",
-                "-i",
-                display,
-                "-c:v",
-                "libvpx-vp9",
-                "-b:v",
-                "1M",
-                str(output_path),
-            ],
-            "ffmpeg-x11grab-fallback",
+        display = os.environ.get("DISPLAY")
+        if display:
+            command, _ = _ffmpeg_x11grab_command(
+                output_path,
+                display=display,
+                backend="ffmpeg-x11grab-xwayland",
+            )
+            if command:
+                return command, "ffmpeg-x11grab-xwayland"
+        return None, (
+            "wf-recorder not found on PATH for Wayland session "
+            "(install wf-recorder or ensure DISPLAY is set for XWayland)"
         )
+
+    display = os.environ.get("DISPLAY")
+    if display:
+        command, _ = _ffmpeg_x11grab_command(
+            output_path,
+            display=display,
+            backend="ffmpeg-x11grab-fallback",
+        )
+        if command:
+            return command, "ffmpeg-x11grab-fallback"
     return None, "no supported desktop video backend for current session"

@@ -147,19 +147,20 @@ def test_merge_gaps_runtime_failures() -> None:
 @patch("finalstrike.evidence.recorder._build_recorder_command")
 def test_video_recorder_starts_and_stops(mock_build: MagicMock, tmp_path: Path) -> None:
     output = tmp_path / "desktop.webm"
-    output.write_bytes(b"webm")
     process = MagicMock()
     process.poll.return_value = None
     process.wait.return_value = 0
     mock_build.return_value = (["ffmpeg", str(output)], "ffmpeg-x11grab")
 
-    with patch("finalstrike.evidence.recorder.subprocess.Popen", return_value=process):
+    with patch("finalstrike.evidence.recorder.subprocess.Popen", return_value=process) as popen:
         recorder = VideoRecorder(output)
         assert recorder.start() is True
         assert recorder.elapsed_ms() >= 0
+        output.write_bytes(b"webm")
         stopped = recorder.stop()
 
     assert stopped == output
+    popen.assert_called_once()
     process.send_signal.assert_called_once()
     process.wait.assert_called()
 
@@ -198,6 +199,23 @@ def test_evidence_session_finalize_writes_result() -> None:
         store.logs_dir.rmdir()
     store.screenshots_dir.rmdir()
     store.root.rmdir()
+
+
+def test_evidence_session_records_video_gap_when_recording_fails() -> None:
+    context = load_repo_context(FIXTURE_REPO)
+    store = ArtifactStore(context, run_id="2026-06-20T14-30-00Z")
+    session = EvidenceSession(store=store, record_video=True)
+    session._recorder = VideoRecorder(store.video_path, enabled=False)
+    session._recorder._error = "ffmpeg not found on PATH"
+    result = RunResult(
+        run_id=store.run_id,
+        repo=str(FIXTURE_REPO),
+        status=RunStatus.PASSED,
+    )
+    finalized = session.finalize(result, plan=None, requested_layers=["ui"])
+    video_gaps = [gap for gap in finalized.gaps if gap.item == "Desktop video recording"]
+    assert len(video_gaps) == 1
+    assert "ffmpeg not found" in video_gaps[0].reason
 
 
 def test_run_result_schema_export_matches_model() -> None:

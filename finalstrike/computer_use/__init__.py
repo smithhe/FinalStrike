@@ -1,12 +1,6 @@
 """Computer-use screenshot, a11y, input, and action loop (Phase 6)."""
 
-from finalstrike.computer_use.executor import execute_ui_from_plan, execute_ui_scenario
-from finalstrike.computer_use.loop import ActionLoop, ActionLoopResult, ReplayActionProvider
+# Avoid eager imports here: executor pulls in evidence (P7) and would create
+# a circular import when evidence.recorder loads platform.session.
 
-__all__ = [
-    "ActionLoop",
-    "ActionLoopResult",
-    "ReplayActionProvider",
-    "execute_ui_from_plan",
-    "execute_ui_scenario",
-]
+__all__: list[str] = []
