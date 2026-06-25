@@ -1,23 +1,23 @@
-# Phase gaps and guardrails
+# Operational guardrails
 
-Tracked gaps between completed phases (P0–P6) and upcoming work, with
-guardrails so nothing is forgotten silently.
+> **Not the work backlog.** MVP planning, status, and ticket-level exit criteria live in **[Jira epic FS-4](https://smithingsolutions.atlassian.net/browse/FS-4)**. This file covers runtime guardrails, test markers, and setup gotchas. Architecture reference: `PLAN.html` (may lag Jira).
 
-## Gap registry
+## Runtime gap registry
+
+Code-level gaps between what is implemented today and what upcoming Jira stories will deliver — not the Jira backlog itself.
 
 | Gap | Resolves in | Guardrail |
 |-----|-------------|-----------|
-| Stub modules (`evidence/`, `reporters/`) | P7–P10 | `finalstrike doctor` lists unimplemented phases; `finalstrike.phase_status` registry |
-| Fixture vs full acceptance criteria | P6 fixture extension | `acceptance-smoke.md` vs `acceptance-full.md`; `capabilities.yaml`; `tests/test_phase_guardrails.py` |
+| Stub modules (`evidence/`, `reporters/`) | [FS-13–FS-15](https://smithingsolutions.atlassian.net/browse/FS-13) (P7–P10) | `finalstrike doctor` lists unimplemented phases; `finalstrike.phase_status` registry |
 | LLM output consistency | P5+ ongoing | `tests/llm_recordings/` cassettes; `@pytest.mark.llm_cassette`; live structural tests with `@requires_live_llm` |
 | OS tools (FFmpeg, browser, xdotool/ydotool) | P6/P7 | `@pytest.mark.requires_platform_tools`; `doctor` checks binaries |
-| HTML report template stub | P8 | `templates/report.html.j2` header comment; doctor lists P8 stub |
+| HTML report template stub | [FS-14](https://smithingsolutions.atlassian.net/browse/FS-14) (P8) | `templates/report.html.j2` header comment; doctor lists P8 stub |
 
 ## Acceptance criteria files (fixture)
 
 - **`acceptance-smoke.md`** — matches the current smoke subset (health, landing page, tests). Use for P0–P5 default runs.
 - **`acceptance-full.md`** — Tiers 1–5 task-list scenario (fixture complete; `capabilities.yaml` `planned` empty).
-- **`capabilities.yaml`** — source of truth for implemented vs planned behavior.
+- **`capabilities.yaml`** — maps **fixture** behavior only (implemented vs planned for the sample-app integration target). Not the product backlog. Fixture is complete (`planned: {}`).
 
 When extending the fixture, update `capabilities.yaml` first, then move items
 from `planned` to `implemented`, then point demos at `acceptance-full.md`.
@@ -53,7 +53,7 @@ acceptance file under test (same as smoke). **Exhaustive** acceptance and
 ## Computer-use (P6)
 
 P6 uses **Approach A** (custom desktop loop: screenshot → vision LLM → OS input).
-The loop is exposed as a standalone command — full `run --layers ui` wiring is P10.
+The loop is exposed as a standalone command — full [`run --layers ui` wiring is P10](https://smithingsolutions.atlassian.net/browse/FS-15).
 
 **Required on the GUI VM:**
 
@@ -78,7 +78,7 @@ finalstrike computer-use run --repo fixtures/sample-app \
 ```
 
 Per-step screenshots are written under `.finalstrike/runs/<run_id>/screenshots/`.
-Full desktop video recording is deferred to P7.
+[Full desktop video recording is deferred to P7](https://smithingsolutions.atlassian.net/browse/FS-13).
 
 **Local E2E workflow** (GUI VM, `env up`, doctor checks, expected artifacts):
 [docs/LOCAL_SETUP.md § Testing computer-use locally](LOCAL_SETUP.md#testing-computer-use-locally-p6).
@@ -136,11 +136,9 @@ pytest -m requires_live_llm
 pytest tests/test_phase_guardrails.py tests/test_p5_planner_integration.py -q
 ```
 
-## Before starting each phase
+## Before implementing a Jira story
 
-| Phase | Pre-flight |
-|-------|------------|
-| P5 | OpenAI-compatible API for live checks; cassettes cover default CI |
-| P6 | `doctor` shows Chrome/Chromium + ffmpeg + input tools; smoke UI via `acceptance-smoke.md` |
-| P7 | P3+P4+P6 paths produce layer results; artifact dir layout from P3 |
-| P8 | Replace `templates/report.html.j2` stub; sample `result.json` from a run |
+1. Open the story under [FS-4](https://smithingsolutions.atlassian.net/browse/FS-4) for scope and exit criteria.
+2. Run `finalstrike doctor --repo fixtures/sample-app`.
+3. For UI work: confirm Chrome/Chromium + input tools on the GUI VM.
+4. For planner changes: run or refresh LLM cassettes as needed.

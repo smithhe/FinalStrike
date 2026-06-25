@@ -27,7 +27,7 @@ CLI → Config Loader → AC Parser → LLM Test Planner
 | **Evidence Recorder** | Desktop video, per-step screenshots, `RunResult` JSON |
 | **Reporters** | HTML report (primary), Slack bot (deferred) |
 
-Full design, data models, and phased implementation plan: **[PLAN.html](PLAN.html)**.
+Architecture and data models: **[PLAN.html](PLAN.html)** (reference). **Backlog and status:** [Jira epic FS-4](https://smithingsolutions.atlassian.net/browse/FS-4).
 
 ## Quick start
 
@@ -98,31 +98,16 @@ finalstrike/          # Python package
 fixtures/sample-app/  # Integration test target repo
 schemas/            # Exported JSON schemas
 tests/              # Unit and integration tests
-PLAN.html           # Implementation plan
+PLAN.html           # Architecture reference (planning lives in Jira FS-4)
 ```
 
 ## Status
 
-**Phase 0 (P0)** — project foundation: package scaffold, Pydantic models, JSON schemas, `validate-config` CLI, and fixture repo.
+**P0–P6 are implemented** (foundation through Linux computer-use spike). The sample-app fixture is complete (`capabilities.yaml` has no planned items).
 
-**Phase 1 (P1)** — config and context loading: `finalstrike.yaml`, `AGENTS.md`, `.cursor/environment.json`, secrets vault, acceptance criteria, and `finalstrike plan --dry-run`.
+**Remaining MVP work** (P7 evidence, P8 HTML report, P9 Slack, P10 full orchestrator, P11/P12 platform ports, CI) is tracked in **[Jira epic FS-4](https://smithingsolutions.atlassian.net/browse/FS-4)**. Read the assigned story there before implementing — not `PLAN.html`.
 
-**Phase 2 (P2)** — environment orchestrator: `finalstrike env up/down`, install/terminals from `environment.json`, HTTP health polling, process teardown.
-
-**Phase 3 (P3)** — build/lint and terminal test runners: `finalstrike run --layers`, pytest output parsing, `RunResult` JSON written under `.finalstrike/runs/`.
-
-**Phase 4 (P4)** — API check runner: HTTP health checks from `finalstrike.yaml`, plan-driven API steps, response assertions, secret redaction in evidence.
-
-**Phase 5 (P5)** — LLM test planner: `openai_compat` provider, AC + context → `VerificationPlan` JSON via `finalstrike plan --no-dry-run`, schema validation with retry.
-
-**Phase 6 (P6)** — computer-use spike on Linux: screenshot + a11y context → vision LLM
-action → OS input (`xdotool`/`ydotool`), standalone `finalstrike computer-use run`,
-per-step screenshot evidence. **Requires Google Chrome or Chromium** on the GUI VM
-(`ui.browser: chromium` or `chrome` in `finalstrike.yaml`).
-
-**Gap guardrails** — `finalstrike doctor`, `docs/PHASE_GAPS.md`, `acceptance-smoke.md` / `acceptance-full.md`, and `capabilities.yaml` keep P6+ prerequisites visible.
-
-See [PLAN.html](PLAN.html) section 8 for the full phase roadmap.
+Operational guardrails (cassettes, `doctor`, VM prerequisites): `docs/PHASE_GAPS.md`. Architecture reference: [PLAN.html](PLAN.html).
 
 ## License
 

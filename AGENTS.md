@@ -4,18 +4,27 @@
 
 FinalStrike is a single Python package (`finalstrike`) exposing a Typer CLI. `fixtures/sample-app/` is the integration test target repo (not a separate product). Python 3.12 is used.
 
+### Planning (backlog and status)
+
+**Jira is the source of truth for what to build and current status.** Before implementing MVP work, read the assigned story under epic [FS-4](https://smithingsolutions.atlassian.net/browse/FS-4). Ticket descriptions include exit criteria, dependencies, and locked decisions.
+
+Repo docs are **reference only** — not the work backlog:
+
+- `PLAN.html` — product/architecture reference (may lag Jira)
+- `docs/PHASE_GAPS.md` — operational guardrails (tests, `doctor`, cassettes, VM prerequisites)
+- `docs/P6_APPROACH.md` — P6 computer-use decision record
+
 ### Environment
 - **Local setup:** run `./scripts/setup-dev.sh` from the repo root (see [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)). Use `./scripts/setup-dev.sh --recreate-venv` when `.venv/bin/pip` fails with "required file not found" (stale virtualenv).
 - Dependencies are installed into a project virtualenv at `.venv` (gitignored). Activate with `source .venv/bin/activate` or prefix commands with `.venv/bin/` (e.g. `.venv/bin/pytest`, `.venv/bin/finalstrike`).
 - `fixtures/sample-app/.finalstrike/secrets.env` (gitignored) must exist for `finalstrike doctor`. Use your **real** `OPENAI_API_KEY` when calling live APIs — the default test suite does not require placeholder values. The setup script creates the file only when missing.
 - Deterministic planner cassettes read `tests/fixtures/cassette-smoke-v1/` (committed). Customize live LLM settings via gitignored `finalstrike.local.yaml` or `FINALSTRIKE_LLM_*` in `.finalstrike/secrets.env` — not by editing committed `finalstrike.yaml`.
 
-### Phase gaps (P5+)
+### Operational guardrails
 
-Before starting P6+, run `finalstrike doctor --repo fixtures/sample-app` and read
-`docs/PHASE_GAPS.md` and `docs/P6_APPROACH.md`. The fixture uses `acceptance-smoke.md` for P0–P6 smoke UI work and
-`acceptance-full.md` for future P6 demos; `capabilities.yaml` tracks what is
-implemented vs planned.
+Before running computer-use or live LLM workflows, run `finalstrike doctor --repo fixtures/sample-app` and read `docs/PHASE_GAPS.md` (guardrails only) and `docs/P6_APPROACH.md` when touching UI automation.
+
+Fixture acceptance files: `acceptance-smoke.md` (smoke subset) and `acceptance-full.md` (Tiers 1–5; fixture complete). `fixtures/sample-app/capabilities.yaml` maps implemented fixture behavior for planner/guardrail tests (`planned: {}` — no remaining fixture backlog).
 
 ### Lint / test / build / run
 - Tests: `pytest -q` (config in `pyproject.toml` `testpaths = ["tests"]`). Run with the venv **activated** (`source .venv/bin/activate`) so `.venv/bin` is on `PATH`. The orchestrator's terminal-layer tests spawn a bare `pytest` subprocess, so invoking the suite as `.venv/bin/pytest` (without activation) leaves `pytest` off `PATH` and makes 3 tests in `tests/test_p3_runners.py` fail with `pytest: not found`.
