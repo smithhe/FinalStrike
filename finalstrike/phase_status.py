@@ -15,17 +15,14 @@ class PhaseModule:
     summary: str
 
 
-IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7})
+IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8})
 
 STUB_MODULES: tuple[PhaseModule, ...] = (
-    PhaseModule("finalstrike/reporters/html.py", 8, "HTML report generator"),
     PhaseModule("finalstrike/reporters/slack.py", 9, "Slack bot reporter"),
     PhaseModule("finalstrike/orchestrator/", 10, "Full run state machine"),
 )
 
-STUB_TEMPLATES: tuple[PhaseModule, ...] = (
-    PhaseModule("templates/report.html.j2", 8, "HTML report Jinja2 template"),
-)
+STUB_TEMPLATES: tuple[PhaseModule, ...] = ()
 
 
 def next_unimplemented_phases() -> list[int]:

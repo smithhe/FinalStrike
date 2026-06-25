@@ -1,0 +1,95 @@
+{
+  "run_id": "2026-06-20T14-30-00Z",
+  "repo": "/workspace/fixtures/sample-app",
+  "branch": "feature/smoke-ui",
+  "status": "partial",
+  "layers": {
+    "env": {
+      "status": "passed",
+      "duration_ms": 45000,
+      "logs": "Started sample_app.server on port 8080"
+    },
+    "build": {
+      "status": "passed",
+      "commands": [
+        {
+          "name": "install",
+          "status": "passed",
+          "exit_code": 0,
+          "duration_ms": 3200,
+          "stdout": "Successfully installed sample-app",
+          "stderr": ""
+        }
+      ]
+    },
+    "terminal": {
+      "status": "passed",
+      "commands": [
+        {
+          "name": "unit",
+          "status": "passed",
+          "exit_code": 0,
+          "duration_ms": 1200,
+          "total_passed": 138,
+          "total_failed": 0,
+          "stdout": "138 passed in 1.12s",
+          "stderr": ""
+        }
+      ],
+      "total_passed": 138,
+      "total_failed": 0
+    },
+    "api": {
+      "status": "passed",
+      "checks": [
+        {
+          "method": "GET",
+          "path": "/health",
+          "status": "passed",
+          "expected_status": 200,
+          "actual_status": 200,
+          "duration_ms": 42,
+          "response_body": "{\"status\":\"ok\"}"
+        }
+      ]
+    },
+    "ui": {
+      "status": "failed",
+      "scenarios": [
+        {
+          "id": "ac-2",
+          "status": "failed",
+          "steps_completed": 2
+        }
+      ],
+      "steps": [
+        {
+          "step_index": 0,
+          "action": "open browser to tasks page",
+          "screenshot": "screenshots/step-001.png",
+          "timestamp_ms": 1200,
+          "status": "passed"
+        },
+        {
+          "step_index": 1,
+          "action": "verify page title",
+          "screenshot": null,
+          "timestamp_ms": 2400,
+          "status": "failed"
+        }
+      ],
+      "error": "Expected title 'Sample App - Tasks' but saw 'Error'"
+    }
+  },
+  "artifacts": {
+    "video": "desktop.webm",
+    "screenshots": ["screenshots/step-001.png"],
+    "html_report": null
+  },
+  "gaps": [
+    {
+      "item": "OAuth login",
+      "reason": "Not in acceptance criteria"
+    }
+  ]
+}

@@ -1,1 +1,450 @@
-{# HTML report template — Phase 8 stub; replace when implementing reporters/html.py #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinalStrike Report — {{ run_id }}</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f8fa;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #656d76;
+      --border: #d0d7de;
+      --accent: #0969da;
+      --pass: #1a7f37;
+      --fail: #cf222e;
+      --partial: #9a6700;
+      --warn-bg: #fff8c5;
+      --warn-border: #d4a72c;
+      --code-bg: #f6f8fa;
+      --shadow: 0 1px 3px rgba(27, 31, 36, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --card: #161b22;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --border: #30363d;
+        --accent: #58a6ff;
+        --pass: #3fb950;
+        --fail: #f85149;
+        --partial: #d29922;
+        --warn-bg: #3d2f00;
+        --warn-border: #9e6a03;
+        --code-bg: #0d1117;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+    header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.25rem;
+    }
+    .badge {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .badge.passed { color: var(--pass); border-color: var(--pass); }
+    .badge.failed { color: var(--fail); border-color: var(--fail); }
+    .badge.partial { color: var(--partial); border-color: var(--partial); }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+    .meta {
+      display: grid;
+      gap: 0.35rem 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .meta strong { color: var(--text); }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.15rem;
+    }
+    .gaps {
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+    }
+    .gap-item {
+      margin: 0.5rem 0;
+      padding: 0.5rem 0.75rem;
+      border-left: 4px solid var(--warn-border);
+      background: rgba(0, 0, 0, 0.03);
+    }
+    .gap-item strong { display: block; }
+    details.layer {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    details.layer > summary {
+      cursor: pointer;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.02);
+    }
+    details.layer > summary::-webkit-details-marker { display: none; }
+    .layer-body { padding: 0 1rem 1rem; }
+    .status-pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .status-pill.passed { color: var(--pass); }
+    .status-pill.failed { color: var(--fail); }
+    .status-pill.skipped { color: var(--muted); }
+    .status-pill.partial { color: var(--partial); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 0.5rem 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.45rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    details.output > summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.9rem;
+      margin: 0.35rem 0;
+    }
+    pre {
+      margin: 0.35rem 0 0.75rem;
+      padding: 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: auto;
+      max-height: 320px;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    figure {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+    figure.failed { border-color: var(--fail); box-shadow: 0 0 0 1px var(--fail); }
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 160px;
+      object-fit: contain;
+      background: #000;
+    }
+    figcaption {
+      padding: 0.45rem 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    video {
+      width: 100%;
+      max-height: 420px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #000;
+    }
+    .video-fallback {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 1rem 0 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge {{ status_class }}">{{ badge }} {{ status_label }}</div>
+      <h1>FinalStrike Evidence Report</h1>
+      <div class="meta">
+        <div><strong>Run ID:</strong> {{ run_id }}</div>
+        <div><strong>Repo:</strong> {{ repo }}</div>
+        {% if branch %}
+        <div><strong>Branch:</strong> {{ branch }}</div>
+        {% endif %}
+        <div><strong>Duration:</strong> {{ total_duration_ms }} ms</div>
+        <div><strong>Generated:</strong> {{ generated_at }}</div>
+        <div><strong>FinalStrike:</strong> v{{ version }}</div>
+      </div>
+    </header>
+
+    {% if gaps %}
+    <section class="gaps">
+      <h2>Gap report</h2>
+      {% for gap in gaps %}
+      <div class="gap-item">
+        <strong>{{ gap.item }}</strong>
+        <span>{{ gap.reason }}</span>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Layers</h2>
+      {% if layers %}
+      {% for layer in layers %}
+      <details class="layer" open>
+        <summary>
+          <span>{{ layer.title }}</span>
+          <span class="status-pill {{ layer.status }}">{{ layer.status }}</span>
+        </summary>
+        <div class="layer-body">
+          {% if layer.key == "env" %}
+          <p>{{ layer.summary }}</p>
+          {% if layer.logs %}
+          <details class="output">
+            <summary>Environment logs</summary>
+            <pre>{{ layer.logs }}</pre>
+          </details>
+          {% endif %}
+
+          {% elif layer.key == "build" %}
+          <table>
+            <thead>
+              <tr><th>Command</th><th>Status</th><th>Exit</th><th>Duration</th></tr>
+            </thead>
+            <tbody>
+              {% for command in layer.commands %}
+              <tr>
+                <td>{{ command.name }}</td>
+                <td><span class="status-pill {{ command.status }}">{{ command.status }}</span></td>
+                <td>{{ command.exit_code }}</td>
+                <td>{{ command.duration_ms }} ms</td>
+              </tr>
+              {% if command.stdout or command.stderr %}
+              <tr>
+                <td colspan="4">
+                  {% if command.stdout %}
+                  <details class="output">
+                    <summary>stdout — {{ command.name }}</summary>
+                    <pre>{{ command.stdout }}</pre>
+                  </details>
+                  {% endif %}
+                  {% if command.stderr %}
+                  <details class="output">
+                    <summary>stderr — {{ command.name }}</summary>
+                    <pre>{{ command.stderr }}</pre>
+                  </details>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% elif layer.key == "terminal" %}
+          <p><strong>{{ layer.total_passed }}</strong> passed, <strong>{{ layer.total_failed }}</strong> failed</p>
+          <table>
+            <thead>
+              <tr><th>Command</th><th>Status</th><th>Tests</th><th>Exit</th><th>Duration</th></tr>
+            </thead>
+            <tbody>
+              {% for command in layer.commands %}
+              <tr>
+                <td>{{ command.name }}</td>
+                <td><span class="status-pill {{ command.status }}">{{ command.status }}</span></td>
+                <td>{{ command.total_passed }}/{{ command.total_passed + command.total_failed }}</td>
+                <td>{{ command.exit_code }}</td>
+                <td>{{ command.duration_ms }} ms</td>
+              </tr>
+              {% if command.stdout or command.stderr %}
+              <tr>
+                <td colspan="5">
+                  {% if command.stdout %}
+                  <details class="output">
+                    <summary>stdout — {{ command.name }}</summary>
+                    <pre>{{ command.stdout }}</pre>
+                  </details>
+                  {% endif %}
+                  {% if command.stderr %}
+                  <details class="output">
+                    <summary>stderr — {{ command.name }}</summary>
+                    <pre>{{ command.stderr }}</pre>
+                  </details>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% elif layer.key == "api" %}
+          <table>
+            <thead>
+              <tr><th>Request</th><th>Status</th><th>Expected</th><th>Actual</th><th>Duration</th></tr>
+            </thead>
+            <tbody>
+              {% for check in layer.checks %}
+              <tr>
+                <td><code>{{ check.method }} {{ check.path }}</code></td>
+                <td><span class="status-pill {{ check.status }}">{{ check.status }}</span></td>
+                <td>{{ check.expected_status or "—" }}</td>
+                <td>{{ check.actual_status or "—" }}</td>
+                <td>{{ check.duration_ms }} ms</td>
+              </tr>
+              {% if check.error %}
+              <tr><td colspan="5"><strong>Error:</strong> {{ check.error }}</td></tr>
+              {% endif %}
+              {% if check.response_body %}
+              <tr>
+                <td colspan="5">
+                  <details class="output">
+                    <summary>Response body — {{ check.method }} {{ check.path }}</summary>
+                    <pre>{{ check.response_body }}</pre>
+                  </details>
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% elif layer.key == "ui" %}
+          {% if layer.error %}
+          <p><strong>Error:</strong> {{ layer.error }}</p>
+          {% endif %}
+          {% if layer.scenarios %}
+          <table>
+            <thead>
+              <tr><th>Scenario</th><th>Status</th><th>Steps completed</th></tr>
+            </thead>
+            <tbody>
+              {% for scenario in layer.scenarios %}
+              <tr>
+                <td>{{ scenario.id }}</td>
+                <td><span class="status-pill {{ scenario.status }}">{{ scenario.status }}</span></td>
+                <td>{{ scenario.steps_completed }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          {% if layer.steps %}
+          <table>
+            <thead>
+              <tr><th>Step</th><th>Action</th><th>Status</th><th>Screenshot</th></tr>
+            </thead>
+            <tbody>
+              {% for step in layer.steps %}
+              <tr>
+                <td>{{ step.step_index + 1 }}</td>
+                <td>{{ step.action }}</td>
+                <td><span class="status-pill {{ step.status }}">{{ step.status }}</span></td>
+                <td>{% if step.screenshot %}{{ step.screenshot }}{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          {% endif %}
+        </div>
+      </details>
+      {% endfor %}
+      {% else %}
+      <p class="empty">No layer results recorded.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Evidence</h2>
+      {% if artifacts.video %}
+      <h3>Desktop recording</h3>
+      <video controls preload="metadata">
+        <source src="{{ artifacts.video }}" type="video/webm">
+      </video>
+      <p class="video-fallback">
+        <a href="{{ artifacts.video }}">Download desktop recording</a>
+      </p>
+      {% else %}
+      <p class="empty">No desktop video recorded.</p>
+      {% endif %}
+
+      {% if artifacts.screenshots %}
+      <h3>Screenshots</h3>
+      <div class="gallery">
+        {% for shot in artifacts.screenshots %}
+        <figure{% if shot.failed %} class="failed"{% endif %}>
+          <img src="{{ shot.src }}" alt="{{ shot.label }}">
+          <figcaption>{{ shot.label }}</figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">No screenshots captured.</p>
+      {% endif %}
+    </section>
+
+    <footer>Generated by FinalStrike v{{ version }}</footer>
+  </div>
+</body>
+</html>

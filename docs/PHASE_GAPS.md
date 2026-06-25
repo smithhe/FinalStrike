@@ -8,10 +8,9 @@ Code-level gaps between what is implemented today and what upcoming Jira stories
 
 | Gap | Resolves in | Guardrail |
 |-----|-------------|-----------|
-| Stub modules (`evidence/`, `reporters/`) | [FS-13–FS-15](https://smithingsolutions.atlassian.net/browse/FS-13) (P7–P10) | `finalstrike doctor` lists unimplemented phases; `finalstrike.phase_status` registry |
+| Stub modules (`reporters/slack`, orchestrator) | [FS-15](https://smithingsolutions.atlassian.net/browse/FS-15) (P9–P10) | `finalstrike doctor` lists unimplemented phases; `finalstrike.phase_status` registry |
 | LLM output consistency | P5+ ongoing | `tests/llm_recordings/` cassettes; `@pytest.mark.llm_cassette`; live structural tests with `@requires_live_llm` |
 | OS tools (FFmpeg, browser, xdotool/ydotool) | [FS-12](https://smithingsolutions.atlassian.net/browse/FS-12)/[FS-13](https://smithingsolutions.atlassian.net/browse/FS-13) (P6/P7) | `@pytest.mark.requires_platform_tools`; `doctor` checks binaries |
-| HTML report template stub | [FS-14](https://smithingsolutions.atlassian.net/browse/FS-14) (P8) | `templates/report.html.j2` header comment; doctor lists P8 stub |
 
 ## Acceptance criteria files (fixture)
 

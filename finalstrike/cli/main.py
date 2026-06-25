@@ -484,6 +484,56 @@ def run(
         raise typer.Exit(code=1)
 
 
+@app.command("report")
+def report(
+    repo: Annotated[
+        Path,
+        typer.Option(
+            "--repo",
+            "-r",
+            help="Path to the target repository containing finalstrike.yaml.",
+            file_okay=False,
+            dir_okay=True,
+            resolve_path=True,
+        ),
+    ],
+    run_id: Annotated[
+        str,
+        typer.Option(
+            "--run-id",
+            help="Run identifier under .finalstrike/runs/ (from result.json).",
+        ),
+    ],
+) -> None:
+    """Render an HTML evidence report from a completed run directory."""
+    from finalstrike.reporters.html import render_html_report_from_run_dir
+
+    context = _load_context_or_exit(repo)
+    run_dir = (
+        context.repo / context.config.evidence.output_dir / run_id
+    ).resolve()
+    if not run_dir.is_dir():
+        console.print(f"[red]Error:[/red] Run directory does not exist: {run_dir}")
+        raise typer.Exit(code=1)
+
+    try:
+        report_path = render_html_report_from_run_dir(
+            run_dir,
+            secrets=context.secrets,
+        )
+    except FileNotFoundError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except OSError as exc:
+        console.print(f"[red]Error:[/red] Failed to write report: {exc}")
+        raise typer.Exit(code=1) from exc
+
+    relative = report_path.relative_to(context.repo)
+    console.print(
+        f"[green]✓[/green] HTML report written to [bold]{relative}[/bold]"
+    )
+
+
 @computer_use_app.command("run")
 def computer_use_run(
     repo: Annotated[

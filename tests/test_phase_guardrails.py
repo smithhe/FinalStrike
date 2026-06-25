@@ -19,14 +19,14 @@ from tests.conftest import (
 runner = CliRunner()
 
 
-def test_implemented_phases_cover_p0_through_p7() -> None:
-    assert IMPLEMENTED_PHASES == frozenset({0, 1, 2, 3, 4, 5, 6, 7})
-    assert next_unimplemented_phases()[0] == 8
+def test_implemented_phases_cover_p0_through_p8() -> None:
+    assert IMPLEMENTED_PHASES == frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8})
+    assert next_unimplemented_phases()[0] == 9
 
 
 def test_stub_modules_reference_future_phases() -> None:
     phases = {item.phase for item in STUB_MODULES}
-    assert phases >= {8, 9, 10}
+    assert phases >= {9, 10}
 
 
 def test_capabilities_manifest_present() -> None:

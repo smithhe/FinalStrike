@@ -31,6 +31,9 @@ finalstrike = "finalstrike.cli.main:app"
 [tool.hatch.build.targets.wheel]
 packages = ["finalstrike"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"templates/report.html.j2" = "finalstrike/templates/report.html.j2"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
