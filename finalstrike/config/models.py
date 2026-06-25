@@ -300,6 +300,7 @@ class UIStepResult(BaseModel):
     step_index: int
     action: str
     screenshot: str | None = None
+    timestamp_ms: int | None = None
     status: LayerStatus
 
 

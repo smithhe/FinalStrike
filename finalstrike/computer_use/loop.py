@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
@@ -69,6 +70,7 @@ class ActionLoop:
         a11y_driver: AccessibilityDriver | None = None,
         input_driver: InputDriver | None = None,
         title_load_timeout: float = 10.0,
+        elapsed_ms_fn: Callable[[], int] | None = None,
     ) -> None:
         self.instruction = instruction
         self.output_dir = output_dir
@@ -80,6 +82,7 @@ class ActionLoop:
         self.ui_base_url = ui_base_url
         self.smoke_route = smoke_route
         self._title_load_timeout = title_load_timeout
+        self._elapsed_ms_fn = elapsed_ms_fn
         self._screenshot_driver = screenshot_driver or ScreenshotDriver()
         self._a11y_driver = a11y_driver or AccessibilityDriver()
         self._input_driver = input_driver
@@ -148,6 +151,7 @@ class ActionLoop:
                         step_index=step_index,
                         action=label,
                         screenshot=rel_name,
+                        timestamp_ms=self._step_timestamp_ms(),
                         status=LayerStatus.FAILED,
                     )
                 )
@@ -163,6 +167,7 @@ class ActionLoop:
                     step_index=step_index,
                     action=label,
                     screenshot=rel_name,
+                    timestamp_ms=self._step_timestamp_ms(),
                     status=LayerStatus.PASSED,
                 )
             )
@@ -196,6 +201,11 @@ class ActionLoop:
             screenshots=screenshots,
             error=f"exceeded max_ui_steps ({self.max_steps})",
         )
+
+    def _step_timestamp_ms(self) -> int | None:
+        if self._elapsed_ms_fn is None:
+            return None
+        return self._elapsed_ms_fn()
 
     def _capture_step_screenshot(
         self,

@@ -1,0 +1,545 @@
+{
+  "$defs": {
+    "APICheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "expected_status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Status"
+        },
+        "actual_status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Status"
+        },
+        "duration_ms": {
+          "default": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "response_body": {
+          "default": "",
+          "title": "Response Body",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "required": [
+        "method",
+        "path",
+        "status"
+      ],
+      "title": "APICheckResult",
+      "type": "object"
+    },
+    "APILayerResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/APICheckResult"
+          },
+          "title": "Checks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "APILayerResult",
+      "type": "object"
+    },
+    "BuildCommandResult": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "stdout": {
+          "default": "",
+          "title": "Stdout",
+          "type": "string"
+        },
+        "stderr": {
+          "default": "",
+          "title": "Stderr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "exit_code",
+        "duration_ms"
+      ],
+      "title": "BuildCommandResult",
+      "type": "object"
+    },
+    "BuildLayerResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "commands": {
+          "items": {
+            "$ref": "#/$defs/BuildCommandResult"
+          },
+          "title": "Commands",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "BuildLayerResult",
+      "type": "object"
+    },
+    "EnvLayerResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "logs": {
+          "default": "",
+          "title": "Logs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "duration_ms"
+      ],
+      "title": "EnvLayerResult",
+      "type": "object"
+    },
+    "LayerStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "skipped"
+      ],
+      "title": "LayerStatus",
+      "type": "string"
+    },
+    "PlanGap": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "title": "Item",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item",
+        "reason"
+      ],
+      "title": "PlanGap",
+      "type": "object"
+    },
+    "RunArtifacts": {
+      "additionalProperties": false,
+      "properties": {
+        "video": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Video"
+        },
+        "screenshots": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Screenshots",
+          "type": "array"
+        },
+        "html_report": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Html Report"
+        }
+      },
+      "title": "RunArtifacts",
+      "type": "object"
+    },
+    "RunLayers": {
+      "additionalProperties": false,
+      "properties": {
+        "env": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EnvLayerResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "build": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BuildLayerResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "terminal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TerminalLayerResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "api": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/APILayerResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ui": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UILayerResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "RunLayers",
+      "type": "object"
+    },
+    "RunStatus": {
+      "enum": [
+        "passed",
+        "failed",
+        "partial"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "TerminalCommandResult": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "total_passed": {
+          "default": 0,
+          "title": "Total Passed",
+          "type": "integer"
+        },
+        "total_failed": {
+          "default": 0,
+          "title": "Total Failed",
+          "type": "integer"
+        },
+        "stdout": {
+          "default": "",
+          "title": "Stdout",
+          "type": "string"
+        },
+        "stderr": {
+          "default": "",
+          "title": "Stderr",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "exit_code",
+        "duration_ms"
+      ],
+      "title": "TerminalCommandResult",
+      "type": "object"
+    },
+    "TerminalLayerResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "commands": {
+          "items": {
+            "$ref": "#/$defs/TerminalCommandResult"
+          },
+          "title": "Commands",
+          "type": "array"
+        },
+        "total_passed": {
+          "default": 0,
+          "title": "Total Passed",
+          "type": "integer"
+        },
+        "total_failed": {
+          "default": 0,
+          "title": "Total Failed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "TerminalLayerResult",
+      "type": "object"
+    },
+    "UILayerResult": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "scenarios": {
+          "items": {
+            "$ref": "#/$defs/UIScenarioResult"
+          },
+          "title": "Scenarios",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/UIStepResult"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "UILayerResult",
+      "type": "object"
+    },
+    "UIScenarioResult": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        },
+        "steps_completed": {
+          "default": 0,
+          "title": "Steps Completed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "status"
+      ],
+      "title": "UIScenarioResult",
+      "type": "object"
+    },
+    "UIStepResult": {
+      "additionalProperties": false,
+      "properties": {
+        "step_index": {
+          "title": "Step Index",
+          "type": "integer"
+        },
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "screenshot": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Screenshot"
+        },
+        "timestamp_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp Ms"
+        },
+        "status": {
+          "$ref": "#/$defs/LayerStatus"
+        }
+      },
+      "required": [
+        "step_index",
+        "action",
+        "status"
+      ],
+      "title": "UIStepResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Canonical evidence bundle output for a verification run.",
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "repo": {
+      "title": "Repo",
+      "type": "string"
+    },
+    "branch": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Branch"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    },
+    "layers": {
+      "$ref": "#/$defs/RunLayers"
+    },
+    "artifacts": {
+      "$ref": "#/$defs/RunArtifacts"
+    },
+    "gaps": {
+      "items": {
+        "$ref": "#/$defs/PlanGap"
+      },
+      "title": "Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "repo",
+    "status"
+  ],
+  "title": "RunResult",
+  "type": "object"
+}

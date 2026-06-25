@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 
 from finalstrike.computer_use.config import resolve_computer_use_llm
 from finalstrike.computer_use.loop import ActionLoop, ActionLoopResult, ActionLLMProvider
 from finalstrike.config.context import RepoContext
 from finalstrike.config.models import (
-    BrowserKind,
     LayerStatus,
-    RunArtifacts,
     RunLayers,
     RunResult,
     RunStatus,
@@ -20,11 +17,8 @@ from finalstrike.config.models import (
     UIScenarioResult,
     VerificationPlan,
 )
+from finalstrike.evidence import EvidenceSession, new_run_id
 from finalstrike.providers.openai_compat import OpenAICompatProvider
-
-
-def new_run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
 
 
 def execute_ui_scenario(
@@ -34,59 +28,64 @@ def execute_ui_scenario(
     scenario_id: str = "ui-1",
     run_id: str | None = None,
     provider: ActionLLMProvider | None = None,
+    plan: VerificationPlan | None = None,
 ) -> RunResult:
     """Run a single UI instruction and write evidence under ``.finalstrike/runs/``."""
     if context.config.ui is None:
         raise ValueError("finalstrike.yaml must define a ui: block for computer-use")
 
-    run_id = run_id or new_run_id()
-    output_root = context.repo / context.config.evidence.output_dir / run_id
     llm_config = resolve_computer_use_llm(context.config)
     llm = provider or OpenAICompatProvider.from_context(
         llm_config,
         context.secrets,
     )
 
-    loop = ActionLoop(
-        instruction=instruction,
-        output_dir=output_root,
-        provider=llm,
-        browser=context.config.ui.browser,
-        max_steps=context.config.policy.max_ui_steps,
-        max_action_retries=context.config.policy.max_ui_retries,
-        max_parse_retries=context.config.policy.max_ui_parse_retries,
-        ui_base_url=context.config.ui.base_url,
-        smoke_route=context.config.ui.smoke_route,
-    )
-    loop_result = loop.run()
+    with EvidenceSession.for_context(context, run_id=run_id or new_run_id()) as session:
+        loop = ActionLoop(
+            instruction=instruction,
+            output_dir=session.store.root,
+            provider=llm,
+            browser=context.config.ui.browser,
+            max_steps=context.config.policy.max_ui_steps,
+            max_action_retries=context.config.policy.max_ui_retries,
+            max_parse_retries=context.config.policy.max_ui_parse_retries,
+            ui_base_url=context.config.ui.base_url,
+            smoke_route=context.config.ui.smoke_route,
+            elapsed_ms_fn=session.elapsed_ms,
+        )
+        loop_result = loop.run()
+        for screenshot in loop_result.screenshots:
+            session.store.register_screenshot(screenshot)
 
-    ui_layer = UILayerResult(
-        status=loop_result.status,
-        scenarios=[
-            UIScenarioResult(
-                id=scenario_id,
-                status=loop_result.status,
-                steps_completed=len(loop_result.steps),
-            )
-        ],
-        steps=loop_result.steps,
-        error=loop_result.error,
-    )
+        ui_layer = UILayerResult(
+            status=loop_result.status,
+            scenarios=[
+                UIScenarioResult(
+                    id=scenario_id,
+                    status=loop_result.status,
+                    steps_completed=len(loop_result.steps),
+                )
+            ],
+            steps=loop_result.steps,
+            error=loop_result.error,
+        )
 
-    run_status = (
-        RunStatus.PASSED
-        if loop_result.status == LayerStatus.PASSED
-        else RunStatus.FAILED
-    )
-    result = RunResult(
-        run_id=run_id,
-        repo=str(context.repo.resolve()),
-        status=run_status,
-        layers=RunLayers(ui=ui_layer),
-        artifacts=RunArtifacts(screenshots=loop_result.screenshots),
-    )
-    _write_run_result(output_root, result)
-    return result
+        run_status = (
+            RunStatus.PASSED
+            if loop_result.status == LayerStatus.PASSED
+            else RunStatus.FAILED
+        )
+        result = RunResult(
+            run_id=session.store.run_id,
+            repo=str(context.repo.resolve()),
+            status=run_status,
+            layers=RunLayers(ui=ui_layer),
+        )
+        return session.finalize(
+            result,
+            plan=plan,
+            requested_layers=["ui"],
+        )
 
 
 def execute_ui_from_plan(
@@ -108,6 +107,7 @@ def execute_ui_from_plan(
             instruction=instruction,
             scenario_id=scenario.id,
             provider=provider,
+            plan=plan,
         )
     raise ValueError(
         f"No UI steps found in plan"

@@ -40,7 +40,7 @@ def test_parse_layers_defaults() -> None:
 
 def test_parse_layers_unknown() -> None:
     with pytest.raises(ValueError, match="Unknown layer"):
-        parse_layers("env,ui")
+        parse_layers("env,bogus")
 
 
 def test_parse_layers_includes_api() -> None:

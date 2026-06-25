@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from finalstrike.config.models import FinalStrikeConfig, VerificationPlan
+from finalstrike.config.models import FinalStrikeConfig, RunResult, VerificationPlan
 
 
 def export_schemas(output_dir: Path | None = None) -> dict[str, Path]:
@@ -17,6 +17,7 @@ def export_schemas(output_dir: Path | None = None) -> dict[str, Path]:
     exports = {
         "finalstrike.schema.json": FinalStrikeConfig.model_json_schema(),
         "verification_plan.schema.json": VerificationPlan.model_json_schema(),
+        "run_result.schema.json": RunResult.model_json_schema(),
     }
 
     written: dict[str, Path] = {}
