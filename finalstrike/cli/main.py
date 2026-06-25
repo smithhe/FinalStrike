@@ -473,6 +473,13 @@ def run(
         plan=verification_plan,
     )
     typer.echo(format_run_result_json(result))
+    if context.config.evidence.video and result.artifacts.video is None:
+        video_gap = next(
+            (gap for gap in result.gaps if gap.item == "Desktop video recording"),
+            None,
+        )
+        detail = video_gap.reason if video_gap else "recorder produced no output"
+        console.print(f"[yellow]Warning:[/yellow] Desktop video not recorded — {detail}")
     if result.status.value == "failed":
         raise typer.Exit(code=1)
 
@@ -543,6 +550,13 @@ def computer_use_run(
         raise typer.Exit(code=1) from exc
 
     typer.echo(format_ui_run_result_json(result))
+    if context.config.evidence.video and result.artifacts.video is None:
+        video_gap = next(
+            (gap for gap in result.gaps if gap.item == "Desktop video recording"),
+            None,
+        )
+        detail = video_gap.reason if video_gap else "recorder produced no output"
+        console.print(f"[yellow]Warning:[/yellow] Desktop video not recorded — {detail}")
     if result.status.value == "failed":
         ui_error = result.layers.ui.error if result.layers.ui else None
         if ui_error:
