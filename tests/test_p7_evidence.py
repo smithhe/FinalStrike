@@ -147,8 +147,11 @@ def test_merge_gaps_runtime_failures() -> None:
 @patch("finalstrike.evidence.recorder._build_recorder_command")
 def test_video_recorder_starts_and_stops(mock_build: MagicMock, tmp_path: Path) -> None:
     output = tmp_path / "desktop.webm"
+    stdin = MagicMock()
+    stdin.closed = False
     process = MagicMock()
-    process.poll.return_value = None
+    process.stdin = stdin
+    process.poll.side_effect = [None, None, None, 0]
     process.wait.return_value = 0
     mock_build.return_value = (["ffmpeg", str(output)], "ffmpeg-x11grab")
 
@@ -161,8 +164,8 @@ def test_video_recorder_starts_and_stops(mock_build: MagicMock, tmp_path: Path) 
 
     assert stopped == output
     popen.assert_called_once()
-    process.send_signal.assert_called_once()
-    process.wait.assert_called()
+    stdin.write.assert_called_once_with(b"q")
+    process.send_signal.assert_not_called()
 
 
 def test_evidence_session_finalize_writes_result() -> None:

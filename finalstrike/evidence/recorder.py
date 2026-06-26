@@ -57,6 +57,7 @@ class VideoRecorder:
             stderr_handle = stderr_log.open("w", encoding="utf-8")
             self._process = subprocess.Popen(
                 command,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
                 stderr=stderr_handle,
                 start_new_session=True,
@@ -107,6 +108,16 @@ class VideoRecorder:
 def _terminate_process(process: subprocess.Popen[bytes]) -> None:
     if process.poll() is not None:
         return
+    try:
+        if process.stdin is not None and not process.stdin.closed:
+            process.stdin.write(b"q")
+            process.stdin.flush()
+            process.stdin.close()
+            process.wait(timeout=15)
+            if process.poll() is not None:
+                return
+    except (BrokenPipeError, OSError, ProcessLookupError, subprocess.TimeoutExpired):
+        pass
     try:
         process.send_signal(signal.SIGINT)
     except (OSError, ProcessLookupError):
@@ -165,9 +176,17 @@ def _ffmpeg_x11grab_command(
             "-i",
             display,
             "-c:v",
-            "libvpx-vp9",
+            "libvpx",
+            "-pix_fmt",
+            "yuv420p",
+            "-deadline",
+            "realtime",
+            "-cpu-used",
+            "4",
             "-b:v",
             "1M",
+            "-f",
+            "webm",
             str(output_path),
         ],
         backend,
