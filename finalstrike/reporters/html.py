@@ -251,13 +251,8 @@ def _artifact_section(result: RunResult) -> dict[str, object]:
                 "failed": step is not None and step.status.value == "failed",
             }
         )
-    video = result.artifacts.video
-    video_mime = "video/mp4"
-    if video and video.endswith(".webm"):
-        video_mime = "video/webm"
     return {
-        "video": video,
-        "video_mime": video_mime,
+        "video": result.artifacts.video,
         "screenshots": gallery,
     }
 

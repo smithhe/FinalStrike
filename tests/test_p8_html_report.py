@@ -46,8 +46,7 @@ def test_render_html_report_writes_self_contained_file(tmp_path: Path) -> None:
     assert "138 passed" in html or "138</strong> passed" in html
     assert 'src="screenshots/step-001.png"' in html
     assert 'id="desktop-video"' in html
-    assert 'src="desktop.mp4"' in html
-    assert 'type="video/mp4"' in html
+    assert 'src="desktop.webm"' in html
     assert 'id="screenshot-lightbox"' in html
     assert 'data-screenshot-src="screenshots/step-001.png"' in html
     assert "open browser to tasks page" in html

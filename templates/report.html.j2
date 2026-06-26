@@ -233,9 +233,6 @@
       background: var(--warn-bg);
       font-size: 0.9rem;
     }
-    .video-error.visible {
-      display: block;
-    }
     .lightbox {
       display: none;
       position: fixed;
@@ -501,13 +498,14 @@
       <video
         id="desktop-video"
         controls
-        preload="auto"
+        preload="metadata"
         playsinline
         src="{{ artifacts.video }}"
       >
-        <source src="{{ artifacts.video }}" type="{{ artifacts.video_mime }}">
+        <source src="{{ artifacts.video }}" type="video/webm; codecs=&quot;vp8&quot;">
+        <source src="{{ artifacts.video }}" type="video/webm">
       </video>
-      <p id="desktop-video-error" class="video-error">
+      <p id="desktop-video-error" class="video-error" hidden>
         This browser could not play the embedded recording.
         <a href="{{ artifacts.video }}">Download desktop recording</a> and open it in VLC or Chrome.
       </p>
@@ -613,14 +611,11 @@
       var desktopVideoError = document.getElementById("desktop-video-error");
       if (desktopVideo && desktopVideoError) {
         function showVideoError() {
-          desktopVideoError.classList.add("visible");
+          desktopVideoError.hidden = false;
         }
         desktopVideo.addEventListener("error", showVideoError);
         desktopVideo.addEventListener("loadeddata", function () {
-          desktopVideoError.classList.remove("visible");
-        });
-        desktopVideo.addEventListener("canplay", function () {
-          desktopVideoError.classList.remove("visible");
+          desktopVideoError.hidden = true;
         });
       }
     })();

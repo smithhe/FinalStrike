@@ -24,7 +24,7 @@ from finalstrike.config.models import (
     VerificationPlan,
 )
 from finalstrike.evidence.gap_analyzer import merge_gaps
-from finalstrike.evidence.recorder import VideoRecorder, transcode_for_browser_playback
+from finalstrike.evidence.recorder import VideoRecorder
 from finalstrike.evidence.session import EvidenceSession
 from finalstrike.evidence.store import ArtifactStore, new_run_id
 
@@ -45,7 +45,7 @@ def test_artifact_store_paths() -> None:
     assert store.root == FIXTURE_REPO / ".finalstrike/runs/2026-06-20T14-30-00Z"
     assert store.screenshots_dir.is_dir()
     assert store.logs_dir.is_dir()
-    assert store.video_path.name == "desktop.mp4"
+    assert store.video_path.name == "desktop.webm"
 
     registered = store.register_screenshot("screenshots/step-001.png")
     assert registered == "screenshots/step-001.png"
@@ -146,14 +146,14 @@ def test_merge_gaps_runtime_failures() -> None:
 
 @patch("finalstrike.evidence.recorder._build_recorder_command")
 def test_video_recorder_starts_and_stops(mock_build: MagicMock, tmp_path: Path) -> None:
-    output = tmp_path / "desktop.mp4"
+    output = tmp_path / "desktop.webm"
     stdin = MagicMock()
     stdin.closed = False
     process = MagicMock()
     process.stdin = stdin
     process.poll.side_effect = [None, None, None, 0]
     process.wait.return_value = 0
-    mock_build.return_value = (["ffmpeg", str(output)], "ffmpeg-x11grab", output)
+    mock_build.return_value = (["ffmpeg", str(output)], "ffmpeg-x11grab")
 
     with patch("finalstrike.evidence.recorder.subprocess.Popen", return_value=process) as popen:
         recorder = VideoRecorder(output)
@@ -166,20 +166,6 @@ def test_video_recorder_starts_and_stops(mock_build: MagicMock, tmp_path: Path) 
     popen.assert_called_once()
     stdin.write.assert_called_once_with(b"q")
     process.send_signal.assert_not_called()
-
-
-def test_transcode_for_browser_playback_writes_mp4(tmp_path: Path) -> None:
-    source = tmp_path / "desktop.webm"
-    destination = tmp_path / "desktop.mp4"
-    source.write_bytes(
-        # Minimal WebM header bytes; ffmpeg may still fail, so mock subprocess.
-        b"\x1a\x45\xdf\xa3",
-    )
-    with patch("finalstrike.evidence.recorder.subprocess.run") as run:
-        run.return_value = MagicMock(returncode=0)
-        destination.write_bytes(b"mp4")
-        playback = transcode_for_browser_playback(source, destination)
-    assert playback == destination
 
 
 def test_evidence_session_finalize_writes_result() -> None:

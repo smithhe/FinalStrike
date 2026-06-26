@@ -109,8 +109,8 @@ def test_select_upload_files_prefers_video_and_screenshots(tmp_path: Path) -> No
     screenshot = tmp_path / "screenshots" / "step-001.png"
     screenshot.parent.mkdir(parents=True)
     screenshot.write_bytes(b"png")
-    video = tmp_path / "desktop.mp4"
-    video.write_bytes(b"mp4")
+    video = tmp_path / "desktop.webm"
+    video.write_bytes(b"webm")
 
     selected = _select_upload_files(result, tmp_path)
     titles = [title for _, title in selected]
@@ -137,7 +137,7 @@ def test_post_slack_report_posts_message_and_uploads(tmp_path: Path) -> None:
     screenshot = tmp_path / "screenshots" / "step-001.png"
     screenshot.parent.mkdir(parents=True)
     screenshot.write_bytes(b"png")
-    (tmp_path / "desktop.mp4").write_bytes(b"mp4")
+    (tmp_path / "desktop.webm").write_bytes(b"webm")
 
     client = RecordingSlackClient()
     config = SlackConfig(bot_token_secret="SLACK_BOT_TOKEN", channel_id="C0123")
