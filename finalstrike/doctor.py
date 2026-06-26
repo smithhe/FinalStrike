@@ -244,6 +244,21 @@ def _fixture_checks(repo: Path) -> list[DoctorCheck]:
     except (OSError, ValueError):
         config = None
 
+    if config is not None and config.slack is not None:
+        from finalstrike.config.secrets import load_secrets
+        from finalstrike.reporters.slack import assess_slack
+
+        secrets = load_secrets(repo)
+        slack_status = assess_slack(config.slack, secrets)
+        checks.append(
+            DoctorCheck(
+                name="Slack reporter (P9)",
+                status=CheckStatus.OK if slack_status.ready else CheckStatus.SKIP,
+                detail=slack_status.detail,
+                phase=9,
+            )
+        )
+
     if config is not None and config.ui is not None:
         detail = browser_check_detail(config.ui.browser)
         checks.append(

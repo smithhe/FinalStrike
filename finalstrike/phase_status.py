@@ -15,10 +15,9 @@ class PhaseModule:
     summary: str
 
 
-IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8})
+IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 STUB_MODULES: tuple[PhaseModule, ...] = (
-    PhaseModule("finalstrike/reporters/slack.py", 9, "Slack bot reporter"),
     PhaseModule("finalstrike/orchestrator/", 10, "Full run state machine"),
 )
 

@@ -440,6 +440,13 @@ def run(
             help="Seconds to wait for API health checks when env layer runs.",
         ),
     ] = 60.0,
+    no_slack: Annotated[
+        bool,
+        typer.Option(
+            "--no-slack",
+            help="Skip posting run summary to Slack when slack config is present.",
+        ),
+    ] = False,
 ) -> None:
     """Execute verification layers and emit RunResult JSON."""
     context = _load_context_or_exit(
@@ -473,6 +480,27 @@ def run(
         plan=verification_plan,
     )
     typer.echo(format_run_result_json(result))
+
+    from finalstrike.reporters.slack import SlackPostStatus, maybe_post_slack_report
+
+    run_dir = (
+        context.repo / context.config.evidence.output_dir / result.run_id
+    ).resolve()
+    slack_result = maybe_post_slack_report(
+        result,
+        artifact_dir=run_dir,
+        config=context.config.slack,
+        secrets=context.secrets,
+        enabled=not no_slack,
+    )
+    if slack_result is not None:
+        if slack_result.status == SlackPostStatus.POSTED:
+            console.print("[green]✓[/green] Slack report posted")
+        elif slack_result.status == SlackPostStatus.SKIPPED:
+            console.print(f"[yellow]Warning:[/yellow] {slack_result.detail}")
+        else:
+            console.print(f"[yellow]Warning:[/yellow] Slack report failed — {slack_result.detail}")
+
     if context.config.evidence.video and result.artifacts.video is None:
         video_gap = next(
             (gap for gap in result.gaps if gap.item == "Desktop video recording"),
