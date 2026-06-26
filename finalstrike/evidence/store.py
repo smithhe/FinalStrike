@@ -18,7 +18,8 @@ def new_run_id() -> str:
 class ArtifactStore:
     """Create and manage the canonical run artifact directory."""
 
-    VIDEO_FILENAME = "desktop.webm"
+    VIDEO_FILENAME = "desktop.mp4"
+    RAW_VIDEO_FILENAME = "desktop.webm"
     RESULT_FILENAME = "result.json"
 
     def __init__(self, context: RepoContext, *, run_id: str | None = None) -> None:
@@ -45,6 +46,10 @@ class ArtifactStore:
     @property
     def video_path(self) -> Path:
         return self.root / self.VIDEO_FILENAME
+
+    @property
+    def raw_video_path(self) -> Path:
+        return self.root / self.RAW_VIDEO_FILENAME
 
     @property
     def result_path(self) -> Path:
