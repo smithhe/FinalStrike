@@ -20,6 +20,14 @@ ACCEPTANCE_SMOKE = FIXTURE_REPO / "acceptance-smoke.md"
 ACCEPTANCE_FULL = FIXTURE_REPO / "acceptance-full.md"
 # Default acceptance file for P0–P4 integration tests.
 ACCEPTANCE_FILE = ACCEPTANCE_SMOKE
+SMOKE_PLAN_FILE = (
+    WORKSPACE_ROOT
+    / "tests"
+    / "llm_recordings"
+    / "planner"
+    / "smoke-v1"
+    / "plan.canonical.json"
+)
 
 # Repo usage for tests (see tests/README.md):
 # - FIXTURE_REPO: integration target; may have gitignored finalstrike.local.yaml

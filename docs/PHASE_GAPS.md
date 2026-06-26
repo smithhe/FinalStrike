@@ -8,7 +8,6 @@ Code-level gaps between what is implemented today and what upcoming Jira stories
 
 | Gap | Resolves in | Guardrail |
 |-----|-------------|-----------|
-| Stub modules (`reporters/slack`, orchestrator) | [FS-15](https://smithingsolutions.atlassian.net/browse/FS-15) (P9–P10) | `finalstrike doctor` lists unimplemented phases; `finalstrike.phase_status` registry |
 | LLM output consistency | P5+ ongoing | `tests/llm_recordings/` cassettes; `@pytest.mark.llm_cassette`; live structural tests with `@requires_live_llm` |
 | OS tools (FFmpeg, browser, xdotool/ydotool) | [FS-12](https://smithingsolutions.atlassian.net/browse/FS-12)/[FS-13](https://smithingsolutions.atlassian.net/browse/FS-13) (P6/P7) | `@pytest.mark.requires_platform_tools`; `doctor` checks binaries |
 
@@ -52,7 +51,7 @@ acceptance file under test (same as smoke). **Exhaustive** acceptance and
 ## Computer-use (P6)
 
 P6 uses **Approach A** (custom desktop loop: screenshot → vision LLM → OS input).
-The loop is exposed as a standalone command — full [`run --layers ui` wiring is P10](https://smithingsolutions.atlassian.net/browse/FS-15).
+The loop is exposed as a standalone command; full `run --layers ui` wiring is in P10 ([FS-15](https://smithingsolutions.atlassian.net/browse/FS-15)).
 
 **Required on the GUI VM:**
 

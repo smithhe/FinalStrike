@@ -15,11 +15,9 @@ class PhaseModule:
     summary: str
 
 
-IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+IMPLEMENTED_PHASES: frozenset[int] = frozenset({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 
-STUB_MODULES: tuple[PhaseModule, ...] = (
-    PhaseModule("finalstrike/orchestrator/", 10, "Full run state machine"),
-)
+STUB_MODULES: tuple[PhaseModule, ...] = ()
 
 STUB_TEMPLATES: tuple[PhaseModule, ...] = ()
 

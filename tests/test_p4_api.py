@@ -26,6 +26,7 @@ from finalstrike.config.models import (
     ScenarioLayers,
     VerificationPlan,
 )
+from finalstrike.config.plan import load_verification_plan
 from finalstrike.orchestrator.run import execute_run
 from finalstrike.runners.api import (
     RESPONSE_BODY_LIMIT,
@@ -35,7 +36,7 @@ from finalstrike.runners.api import (
     sanitize_response_body,
 )
 
-from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO
+from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO, SMOKE_PLAN_FILE
 
 runner = CliRunner()
 
@@ -261,7 +262,8 @@ def test_execute_run_api_layer_against_sample_app() -> None:
     try:
         _wait_for_url(f"http://127.0.0.1:{port}/health")
         context = load_repo_context(FIXTURE_REPO, acceptance_path=ACCEPTANCE_FILE)
-        result = execute_run(context, layers=["api"])
+        plan = load_verification_plan(SMOKE_PLAN_FILE)
+        result = execute_run(context, layers=["api"], plan=plan, render_html=False)
         assert result.layers.api is not None
         assert result.layers.api.status == LayerStatus.PASSED
         assert result.layers.api.checks[0].actual_status == 200
@@ -290,6 +292,8 @@ def test_run_cli_api_layer_requires_live_service(tmp_path: Path) -> None:
     )
     acceptance = tmp_path / "acceptance-smoke.md"
     acceptance.write_text("## AC\n- api down\n", encoding="utf-8")
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(SMOKE_PLAN_FILE.read_text(encoding="utf-8"), encoding="utf-8")
     result = runner.invoke(
         app,
         [
@@ -298,6 +302,8 @@ def test_run_cli_api_layer_requires_live_service(tmp_path: Path) -> None:
             str(tmp_path),
             "--acceptance",
             str(acceptance),
+            "--plan",
+            str(plan_path),
             "--layers",
             "api",
         ],
@@ -326,6 +332,8 @@ def test_run_cli_api_layer_with_env(echo_server: str, tmp_path: Path) -> None:
         yaml.safe_dump(config), encoding="utf-8"
     )
     (tmp_path / "acceptance-smoke.md").write_text("## AC\n- ok\n", encoding="utf-8")
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(SMOKE_PLAN_FILE.read_text(encoding="utf-8"), encoding="utf-8")
     result = runner.invoke(
         app,
         [
@@ -334,6 +342,8 @@ def test_run_cli_api_layer_with_env(echo_server: str, tmp_path: Path) -> None:
             str(tmp_path),
             "--acceptance",
             str(tmp_path / "acceptance-smoke.md"),
+            "--plan",
+            str(plan_path),
             "--layers",
             "api",
         ],

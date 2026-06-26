@@ -19,7 +19,13 @@ from finalstrike.planner import generate_verification_plan
 from finalstrike.providers.openai_compat import LLMProviderError
 from finalstrike.env.orchestrator import EnvOrchestrator
 from finalstrike.doctor import CheckStatus, doctor_exit_code, run_doctor_checks
-from finalstrike.orchestrator.run import execute_run, format_run_result_json, parse_layers
+from finalstrike.orchestrator.run import (
+    execute_run,
+    format_run_result_json,
+    format_run_summary,
+    parse_layers,
+    resolve_plan,
+)
 from finalstrike.computer_use.executor import (
     execute_ui_from_plan,
     execute_ui_scenario,
@@ -412,7 +418,7 @@ def run(
         Optional[str],
         typer.Option(
             "--layers",
-            help="Comma-separated layers to run: env,build,terminal,api.",
+            help="Comma-separated layers: env,build,terminal,api,ui (default: all).",
         ),
     ] = None,
     plan: Annotated[
@@ -420,10 +426,31 @@ def run(
         typer.Option(
             "--plan",
             "-p",
-            help="Path to VerificationPlan JSON (optional API checks beyond yaml health).",
+            help="Path to VerificationPlan JSON (skips planner when set).",
             file_okay=True,
             dir_okay=False,
             resolve_path=True,
+        ),
+    ] = None,
+    plan_only: Annotated[
+        bool,
+        typer.Option(
+            "--plan-only",
+            help="Run planner only; print VerificationPlan JSON and exit.",
+        ),
+    ] = False,
+    skip_env: Annotated[
+        bool,
+        typer.Option(
+            "--skip-env",
+            help="Assume services are running; do not start/stop env layer.",
+        ),
+    ] = False,
+    fail_fast: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--fail-fast/--no-fail-fast",
+            help="Stop at first layer failure (overrides finalstrike.yaml policy).",
         ),
     ] = None,
     branch: Annotated[
@@ -455,11 +482,6 @@ def run(
         acceptance_stdin=acceptance_stdin,
         require_acceptance=True,
     )
-    try:
-        selected_layers = parse_layers(layers)
-    except ValueError as exc:
-        console.print(f"[red]Error:[/red] {exc}")
-        raise typer.Exit(code=1) from exc
 
     verification_plan = None
     if plan is not None:
@@ -467,25 +489,59 @@ def run(
             verification_plan = load_verification_plan(plan)
         except FileNotFoundError as exc:
             console.print(f"[red]Error:[/red] {exc}")
-            raise typer.Exit(code=1) from exc
+            raise typer.Exit(code=2) from exc
         except ValueError as exc:
             console.print(f"[red]Error:[/red] {exc}")
+            raise typer.Exit(code=2) from exc
+
+    if plan_only:
+        try:
+            generated = resolve_plan(context, verification_plan)
+        except LLMProviderError as exc:
+            console.print(f"[red]LLM error:[/red] {exc}")
             raise typer.Exit(code=1) from exc
+        except ValueError as exc:
+            console.print(f"[red]Planner error:[/red] {exc}")
+            raise typer.Exit(code=2) from exc
+        typer.echo(generated.model_dump_json(indent=2))
+        if generated.gaps:
+            console.print(
+                f"\n[yellow]Gap analysis:[/yellow] {len(generated.gaps)} item(s) "
+                "flagged by planner (see gaps in JSON output)."
+            )
+        return
 
-    result = execute_run(
-        context,
-        layers=selected_layers,
-        branch=branch,
-        health_timeout=health_timeout,
-        plan=verification_plan,
-    )
-    typer.echo(format_run_result_json(result))
+    try:
+        selected_layers = parse_layers(layers)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
-    from finalstrike.reporters.slack import SlackPostStatus, maybe_post_slack_report
+    try:
+        result = execute_run(
+            context,
+            layers=selected_layers,
+            branch=branch,
+            fail_fast=fail_fast,
+            skip_env=skip_env,
+            health_timeout=health_timeout,
+            plan=verification_plan,
+        )
+    except LLMProviderError as exc:
+        console.print(f"[red]LLM error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except ValueError as exc:
+        console.print(f"[red]Run error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
     run_dir = (
         context.repo / context.config.evidence.output_dir / result.run_id
     ).resolve()
+    typer.echo(format_run_result_json(result))
+    console.print(format_run_summary(result, artifact_dir=run_dir))
+
+    from finalstrike.reporters.slack import SlackPostStatus, maybe_post_slack_report
+
     slack_result = maybe_post_slack_report(
         result,
         artifact_dir=run_dir,
@@ -508,7 +564,7 @@ def run(
         )
         detail = video_gap.reason if video_gap else "recorder produced no output"
         console.print(f"[yellow]Warning:[/yellow] Desktop video not recorded — {detail}")
-    if result.status.value == "failed":
+    if result.status.value in {"failed", "partial"}:
         raise typer.Exit(code=1)
 
 

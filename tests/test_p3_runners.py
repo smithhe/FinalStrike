@@ -16,7 +16,7 @@ from finalstrike.runners.build import run_build_layer
 from finalstrike.runners.pytest_parser import parse_pytest_output
 from finalstrike.runners.terminal import run_terminal_layer
 
-from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO
+from tests.conftest import ACCEPTANCE_FILE, FIXTURE_REPO, SMOKE_PLAN_FILE
 runner = CliRunner()
 
 
@@ -35,7 +35,7 @@ def test_parse_pytest_output_failed() -> None:
 
 
 def test_parse_layers_defaults() -> None:
-    assert parse_layers(None) == ["env", "build", "terminal"]
+    assert parse_layers(None) == ["env", "build", "terminal", "api", "ui"]
 
 
 def test_parse_layers_unknown() -> None:
@@ -109,6 +109,8 @@ def test_run_cli_build_terminal_layers() -> None:
             str(FIXTURE_REPO),
             "--acceptance",
             str(ACCEPTANCE_FILE),
+            "--plan",
+            str(SMOKE_PLAN_FILE),
             "--layers",
             "build,terminal",
             "--branch",

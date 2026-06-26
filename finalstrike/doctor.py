@@ -52,21 +52,44 @@ def run_doctor_checks(
     """Run guardrail checks. ``repo`` enables fixture-specific validation."""
     checks: list[DoctorCheck] = []
 
+    next_phases = next_unimplemented_phases()
+    if next_phases:
+        phase_detail = (
+            f"P0–P{max(IMPLEMENTED_PHASES)} complete; next: P{next_phases[0]}"
+        )
+    else:
+        phase_detail = f"P0–P{max(IMPLEMENTED_PHASES)} complete (MVP phases done)"
+
     checks.append(
         DoctorCheck(
             name="Implemented phases",
             status=CheckStatus.OK,
-            detail=f"P0–P{max(IMPLEMENTED_PHASES)} complete; next: P{next_unimplemented_phases()[0]}",
+            detail=phase_detail,
         )
     )
 
     stub_count = len(STUB_MODULES) + len(STUB_TEMPLATES)
+    if stub_count == 0 and not next_phases:
+        stub_status = CheckStatus.OK
+        stub_detail = "No scaffolded stub modules remaining"
+        stub_phase = None
+    elif next_phases:
+        stub_status = CheckStatus.WARN
+        stub_detail = (
+            f"{stub_count} scaffolded paths awaiting P{next_phases[0]}–P10"
+        )
+        stub_phase = next_phases[0]
+    else:
+        stub_status = CheckStatus.OK
+        stub_detail = f"{stub_count} scaffolded paths remaining"
+        stub_phase = None
+
     checks.append(
         DoctorCheck(
             name="Stub modules",
-            status=CheckStatus.WARN,
-            detail=f"{stub_count} scaffolded paths awaiting P{next_unimplemented_phases()[0]}–P10",
-            phase=next_unimplemented_phases()[0],
+            status=stub_status,
+            detail=stub_detail,
+            phase=stub_phase,
         )
     )
 
