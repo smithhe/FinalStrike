@@ -82,7 +82,7 @@
     }
   },
   "artifacts": {
-    "video": "desktop.webm",
+    "video": "desktop.mp4",
     "screenshots": ["screenshots/step-001.png"],
     "html_report": null
   },
