@@ -51,3 +51,29 @@ Use the structure in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_T
 4. **How to test locally** — step-by-step instructions for reviewers, including [local environment setup](docs/LOCAL_SETUP.md) when tests or CLI are involved, then PR-specific commands and what success looks like.
 
 Cloud agents should follow the same sections when creating or updating PR descriptions.
+
+### Git commits
+
+When working on a Jira story, **start every commit message with the ticket key** (e.g. `FS-15: …`). This keeps branch history traceable in Jira and GitHub.
+
+Format:
+
+```
+FS-15: Short imperative summary (≤72 chars when possible)
+
+Optional body with context, bullet points, and rationale.
+```
+
+Examples:
+
+```
+FS-15: P10 wire full orchestrator into finalstrike run
+
+Integrate planner, all verification layers, and evidence bundle output.
+```
+
+```
+FS-15: Fix HTML report screenshot lightbox
+```
+
+Do not put the ticket only at the end of the subject line — it must lead the message.
