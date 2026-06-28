@@ -84,15 +84,84 @@ class ComputerActionResponse(BaseModel):
     action: ActionPayload
 
 
+_COORDINATE_ALIASES = (
+    "coordinates",
+    "coordinate",
+    "position",
+    "point",
+    "coords",
+    "coord",
+    "xy",
+)
+
+
+def _as_int(value: Any) -> int:
+    if isinstance(value, bool):
+        raise TypeError("bool is not a valid coordinate")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(round(value))
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value.strip())
+    raise TypeError(f"expected numeric coordinate, got {type(value).__name__}")
+
+
+def _pair_from_sequence(values: Any) -> tuple[int, int] | None:
+    if not isinstance(values, (list, tuple)) or len(values) < 2:
+        return None
+    return _as_int(values[0]), _as_int(values[1])
+
+
+def _coerce_action_dict(action: dict[str, Any]) -> dict[str, Any]:
+    """Normalize common coordinate shapes models emit for click actions."""
+    if action.get("type") != "click":
+        return action
+
+    coerced = dict(action)
+
+    x_val = coerced.get("x")
+    if isinstance(x_val, (list, tuple)) and coerced.get("y") is None:
+        pair = _pair_from_sequence(x_val)
+        if pair is not None:
+            coerced["x"], coerced["y"] = pair
+
+    for key in _COORDINATE_ALIASES:
+        if key not in coerced:
+            continue
+        alias = coerced.pop(key)
+        if coerced.get("x") is not None and coerced.get("y") is not None:
+            continue
+        if isinstance(alias, dict):
+            if alias.get("x") is not None and alias.get("y") is not None:
+                coerced.setdefault("x", _as_int(alias["x"]))
+                coerced.setdefault("y", _as_int(alias["y"]))
+            continue
+        pair = _pair_from_sequence(alias)
+        if pair is not None:
+            coerced.setdefault("x", pair[0])
+            coerced.setdefault("y", pair[1])
+
+    for axis in ("x", "y"):
+        val = coerced.get(axis)
+        if isinstance(val, str):
+            coerced[axis] = _as_int(val)
+
+    return coerced
+
+
 def normalize_computer_action_response(data: dict[str, Any]) -> dict[str, Any]:
     """Coerce common LLM response shapes into ``{thought, action}``."""
     if isinstance(data.get("action"), dict):
-        return data
+        return {
+            **data,
+            "action": _coerce_action_dict(data["action"]),
+        }
     if "type" in data:
         action = {key: data[key] for key in _ACTION_FIELD_NAMES if key in data}
         return {
             "thought": data.get("thought", ""),
-            "action": action,
+            "action": _coerce_action_dict(action),
         }
     return data
 

@@ -95,6 +95,8 @@ def build_action_messages(
         action_schema_json(),
         "```",
         "",
+        "For click actions, set separate integer fields x and y (not a coordinate array).",
+        "",
         "Choose the next action JSON object.",
         ]
     )
