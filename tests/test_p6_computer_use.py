@@ -62,6 +62,43 @@ def test_parse_flat_action_shape() -> None:
     assert parsed.action.url == "http://localhost:3000/"
 
 
+def test_parse_click_action_coerces_coordinate_list_in_x() -> None:
+    raw = json.dumps(
+        {
+            "thought": "click button",
+            "action": {"type": "click", "x": [494, 251]},
+        }
+    )
+    parsed = parse_action_response(raw)
+    assert parsed.action.type == "click"
+    assert parsed.action.x == 494
+    assert parsed.action.y == 251
+
+
+def test_parse_click_action_coerces_coordinates_alias() -> None:
+    raw = json.dumps(
+        {
+            "thought": "click button",
+            "action": {"type": "click", "coordinates": [120, 340]},
+        }
+    )
+    parsed = parse_action_response(raw)
+    assert parsed.action.x == 120
+    assert parsed.action.y == 340
+
+
+def test_parse_click_action_coerces_position_object() -> None:
+    raw = json.dumps(
+        {
+            "thought": "click button",
+            "action": {"type": "click", "position": {"x": 80, "y": 160}},
+        }
+    )
+    parsed = parse_action_response(raw)
+    assert parsed.action.x == 80
+    assert parsed.action.y == 160
+
+
 def test_parse_action_ignores_extra_fields() -> None:
     raw = json.dumps(
         {
